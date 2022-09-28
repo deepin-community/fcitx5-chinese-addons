@@ -1,0 +1,13 @@
+usr/lib/*/fcitx5/libpinyin.so
+usr/lib/*/fcitx5/qt5/libpinyindictmanager.so
+usr/share/fcitx5/addon/pinyin.conf
+usr/share/fcitx5/inputmethod/pinyin.conf
+usr/share/fcitx5/inputmethod/shuangpin.conf
+usr/share/fcitx5/pinyin/chaizi.dict
+usr/share/fcitx5/pinyin/emoji.dict
+usr/share/icons/hicolor/*/apps/fcitx-pinyin.png
+usr/share/icons/hicolor/*/apps/fcitx-remind-*.png
+usr/share/icons/hicolor/*/apps/fcitx-shuangpin.png
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-pinyin.png
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-remind-*.png
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-shuangpin.png

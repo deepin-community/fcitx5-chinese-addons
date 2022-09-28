@@ -1,0 +1,4 @@
+usr/lib/*/fcitx5/libpinyinhelper.so
+usr/share/fcitx5/addon/pinyinhelper.conf
+usr/share/fcitx5/pinyinhelper/py_stroke.mb
+usr/share/fcitx5/pinyinhelper/py_table.mb

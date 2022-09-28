@@ -1,0 +1,10 @@
+version=4
+opts="mode=git, pgpmode=none" \
+ https://github.com/fcitx/fcitx5-chinese-addons \
+  refs/tags/@ANY_VERSION@ debian
+opts="component=pystroke" \
+ https://download.fcitx-im.org/data/ \
+ py_stroke-(\d+).tar.gz ignore
+opts="component=pytable" \
+ https://download.fcitx-im.org/data/ \
+ py_table-(\d+).tar.gz ignore

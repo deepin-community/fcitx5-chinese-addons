@@ -1,0 +1,4 @@
+usr/share/locale/*
+usr/share/icons/hicolor/*/apps/fcitx-chn.png
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-chn.png
+usr/share/metainfo/org.fcitx.Fcitx5.Addon.ChineseAddons.metainfo.xml

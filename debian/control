@@ -1,0 +1,324 @@
+Source: fcitx5-chinese-addons
+Priority: optional
+Section: utils
+Maintainer: Debian Input Method Team <debian-input-method@lists.debian.org>
+Uploaders:
+ Boyuan Yang <byang@debian.org>,
+Build-Depends:
+ appstream,
+ cmake (>= 3.6.0),
+ debhelper-compat (= 13),
+ extra-cmake-modules,
+ fcitx5-modules-dev (>= 5.0.11),
+ gettext,
+ libboost-iostreams-dev,
+ libcurl4-openssl-dev | libcurl-dev,
+ libfcitx5-qt-dev,
+ libfcitx5config-dev (>= 5.0.11),
+ libfcitx5core-dev (>= 5.0.11),
+ libfcitx5utils-dev (>= 5.0.11),
+ libfmt-dev,
+ libime-bin (>= 1.0.11),
+ libimecore-dev (>= 1.0.11),
+ libimepinyin-dev (>= 1.0.11),
+ libimetable-dev (>= 1.0.11),
+ libopencc-dev (>= 1.1~),
+ pkg-config,
+ qtbase5-dev,
+ qtwebengine5-dev [amd64 arm64 armhf i386 mipsel mips64el],
+Standards-Version: 4.6.0
+Rules-Requires-Root: no
+Homepage: https://github.com/fcitx/fcitx5-chinese-addons
+Vcs-Git: https://salsa.debian.org/input-method-team/fcitx5-chinese-addons.git
+Vcs-Browser: https://salsa.debian.org/input-method-team/fcitx5-chinese-addons
+
+Package: fcitx5-chinese-addons
+Section: metapackages
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ fcitx5-chinese-addons-bin,
+ fcitx5-pinyin,
+ fcitx5-table,
+ ${misc:Depends},
+Recommends:
+ fcitx5,
+Enhances:
+ fcitx5,
+Description: Chinese-related addon for fcitx5 (metapackage)
+ For Chinese fcitx5 users, fcitx5-chinese-addons provides Chinese-specific
+ pinyin and table input method support.
+ .
+ This package is a metapackage, which depends on all addons provided by
+ fcitx5-chinese-addons project. Users should consider installing it for
+ best experience of Chinese integration with fcitx5.
+
+Package: fcitx5-chinese-addons-bin
+Architecture: any
+Depends:
+ fcitx5-chinese-addons-data,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Chinese-related addon for fcitx5 (binary tools)
+ For Chinese fcitx5 users, fcitx5-chinese-addons provides Chinese-specific
+ pinyin and table input method support.
+ .
+ This package provides binary tools provided by fcitx5-chinese-addons.
+
+Package: fcitx5-chinese-addons-data
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ ${misc:Depends},
+Conflicts:
+ fcitx-data,
+Description: Chinese-related addon for fcitx5 (shared data files)
+ For Chinese fcitx5 users, fcitx5-chinese-addons provides Chinese-specific
+ pinyin and table input method support.
+ .
+ This package provides architecture-independent shared data files used by
+ fcitx5-chinese-addons.
+
+Package: fcitx5-module-chttrans
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Conflicts:
+ fcitx-data,
+Description: Fcitx Input Method Framework v5 (chttrans module)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the chttrans module.
+
+Package: fcitx5-module-cloudpinyin
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Fcitx Input Method Framework v5 (cloudpinyin module)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the cloudpinyin module. It is used to enhance
+ the input experience of Chinese pinyin users.
+
+Package: fcitx5-module-cloudpinyin-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-module-cloudpinyin (= ${binary:Version}),
+ ${misc:Depends},
+Description: Development files for fcitx5 cloudpinyin module
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides development files for the cloudpinyin module
+ of fcitx5.
+
+Package: fcitx5-module-fullwidth
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Conflicts:
+ fcitx-data,
+Description: Fcitx Input Method Framework v5 (fullwidth module)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the fullwidth module. It enhances the input
+ experience of full-width characters.
+
+Package: fcitx5-module-pinyinhelper
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ fcitx5-pinyin (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Fcitx Input Method Framework v5 (pinyinhelper module)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the pinyinhelper module. It is used to enhance
+ the input experience of Chinese pinyin users.
+
+Package: fcitx5-module-pinyinhelper-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-module-pinyinhelper (= ${binary:Version}),
+ ${misc:Depends},
+Description: Development files for fcitx5 pinyinhelper module
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides development files for the pinyinhelper module
+ of fcitx5.
+
+Package: fcitx5-module-punctuation
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Conflicts:
+ fcitx-data,
+Description: Fcitx Input Method Framework v5 (punctuation module)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the punctuation module. It provides the
+ capability to easily input punctuations.
+
+Package: fcitx5-module-punctuation-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-module-punctuation (= ${binary:Version}),
+ ${misc:Depends},
+Description: Development files for fcitx5 punctuation module
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides development files for the punctuation module
+ of fcitx5.
+
+Package: fcitx5-pinyin
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ fcitx5-module-punctuation (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ fcitx5-module-chttrans (= ${binary:Version}),
+ fcitx5-module-cloudpinyin (= ${binary:Version}),
+ fcitx5-module-fullwidth (= ${binary:Version}),
+ fcitx5-module-pinyinhelper (= ${binary:Version}),
+ fcitx5-module-quickphrase,
+ fcitx5-modules,
+Conflicts:
+ fcitx-data,
+Description: Fcitx Input Method Framework v5 (builtin pinyin support)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the builtin pinyin input method. It provides
+ the default pinyin input method for Chinese users.
+
+Package: fcitx5-table
+Architecture: any
+Multi-Arch: same
+Depends:
+ fcitx5-chinese-addons-data,
+ fcitx5-module-pinyinhelper (= ${binary:Version}),
+ fcitx5-module-punctuation (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ fcitx5-module-fullwidth (= ${binary:Version}),
+ fcitx5-module-quickphrase,
+Conflicts:
+ fcitx-data,
+Description: Fcitx Input Method Framework v5 (builtin table support)
+ Fcitx5 is the next generation of fcitx input method framework. It
+ provides pleasant and modern input experience with intuitive graphical
+ configuration tools. The framework is highly extensible with support
+ for GTK+ and Qt toolkits, DBus interfaces, a large variety of desktop
+ environments and a developer-friendly API.
+ .
+ Some of its new features include support of both Wayland and Xorg
+ and the ability to mimic IBus Input Method Framework in order to
+ provide better compatibility across different Linux distributions
+ and desktop environments.
+ .
+ This package provides the table engine for fcitx5. With this
+ engine, Fcitx5 is able to support a large number of table-based input
+ methods such as Wubi, ZhengMa, etc.

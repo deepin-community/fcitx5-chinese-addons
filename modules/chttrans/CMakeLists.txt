@@ -1,0 +1,16 @@
+set(CHTTRANS_SOURCES
+    chttrans.cpp chttrans-native.cpp
+)
+if (ENABLE_OPENCC)
+    set(CHTTRANS_SOURCES ${CHTTRANS_SOURCES} chttrans-opencc.cpp)
+endif()
+add_library(chttrans MODULE ${CHTTRANS_SOURCES})
+target_link_libraries(chttrans Fcitx5::Core Fcitx5::Config Fcitx5::Module::Notifications Boost::iostreams)
+if (ENABLE_OPENCC)
+    target_link_libraries(chttrans OpenCC::OpenCC)
+endif()
+install(TARGETS chttrans DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
+configure_file(chttrans.conf.in.in chttrans.conf.in)
+fcitx5_translate_desktop_file("${CMAKE_CURRENT_BINARY_DIR}/chttrans.conf.in" chttrans.conf)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/chttrans.conf" DESTINATION "${FCITX_INSTALL_PKGDATADIR}/addon")
+install(FILES gbks2t.tab DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/chttrans")

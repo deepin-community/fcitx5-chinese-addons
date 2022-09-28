@@ -1,0 +1,17 @@
+[Addon]
+Name=Table
+Category=InputMethod
+Library=libtable
+Type=SharedLibrary
+OnDemand=True
+Configurable=True
+Version=@PROJECT_VERSION@
+
+[Addon/Dependencies]
+0=punctuation
+1=pinyinhelper
+
+[Addon/OptionalDependencies]
+0=fullwidth
+1=quickphrase
+

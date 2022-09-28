@@ -1,0 +1,4 @@
+usr/lib/*/fcitx5/libfullwidth.so
+usr/share/fcitx5/addon/fullwidth.conf
+usr/share/icons/hicolor/*/apps/fcitx-fullwidth-*
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-fullwidth-*

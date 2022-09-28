@@ -1,0 +1,240 @@
+fcitx5-chinese-addons (5.0.11-1) UNRELEASED; urgency=medium
+
+  * update
+
+ -- Debian Input Method Team <debian-input-method@lists.debian.org>  Fri, 22 Apr 2022 19:55:44 +0800
+
+fcitx5-chinese-addons (5.0.11-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Thu, 03 Feb 2022 16:16:53 -0500
+
+fcitx5-chinese-addons (5.0.10-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 08 Jan 2022 00:43:50 -0500
+
+fcitx5-chinese-addons (5.0.9-2) unstable; urgency=high
+
+  * debian/control: Add missing dependency relationship:
+    + fcitx5-table:
+      - fcitx5-module-pinyinhelper (Dep)
+      - fcitx5-module-punctuation (Dep)
+      - fcitx5-module-fullwidth (Rec)
+      - fcitx5-module-quickphrase (Rec)
+    + fcitx5-pinyin:
+      - fcitx5-modules (Rec)
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 14 Dec 2021 19:33:50 -0500
+
+fcitx5-chinese-addons (5.0.9-1) unstable; urgency=medium
+
+  * New upstream release 5.0.9.
+  * debian/control: Require latest fcitx5 releases:
+    + libime: 1.0.10
+    + fcitx5: 5.0.11
+  * debian/*.install: Rename .so name installation following
+    upstream changes.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 14 Dec 2021 14:40:03 -0500
+
+fcitx5-chinese-addons (5.0.8-2) unstable; urgency=medium
+
+  * Add conflict relationship after icon-related changes.
+    Let the following packages conflict with fcitx-data:
+    + fcitx5-chinese-addons-data
+    + fcitx5-module-chttrans
+    + fcitx5-module-fullwidth
+    + fcitx5-module-punctuation
+    + fcitx5-pinyin
+    + fcitx5-table
+  * debian/control: Drop useless ${shlibs:Depends} variable substitution
+    from several dev packages:
+    + fcitx5-module-punctuation-dev
+    + fcitx5-module-pinyinhelper-dev
+    + fcitx5-module-cloudpinyin-dev
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 24 Nov 2021 14:18:16 -0500
+
+fcitx5-chinese-addons (5.0.8-1) unstable; urgency=medium
+
+  * New upstream release 5.0.8.
+  * Drop icon-related patches:
+    - debian/not-installed: Dropped.
+    - debian/*.install: Also install non-Flatpak icons.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 24 Nov 2021 13:55:05 -0500
+
+fcitx5-chinese-addons (5.0.7-2) unstable; urgency=medium
+
+  * Rebuild against opencc 1.1.3.
+
+  [ Shengjing Zhu ]
+  * Build with qtwebengine on mips64el (Closes: #995413)
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 02 Oct 2021 22:08:26 -0400
+
+fcitx5-chinese-addons (5.0.7-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version
+  * Fix typo in package description
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 01 Oct 2021 02:40:29 +0800
+
+fcitx5-chinese-addons (5.0.6-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version
+  * Update Standards-Version to 4.6.0 (no changes)
+
+ -- Shengjing Zhu <zhsj@debian.org>  Wed, 25 Aug 2021 12:31:51 +0800
+
+fcitx5-chinese-addons (5.0.4-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 19 Feb 2021 15:29:37 +0800
+
+fcitx5-chinese-addons (5.0.3-2) unstable; urgency=medium
+
+  * Team upload.
+  * Reupload with 5.0.2-2 changes
+
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 19 Jan 2021 13:12:48 +0800
+
+fcitx5-chinese-addons (5.0.3-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version
+  * Update Standards-Version to 4.5.1 (no changes)
+  * Bump fcitx5 to 5.0.4
+  * Bump libime to 1.0.3
+
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 19 Jan 2021 12:37:29 +0800
+
+fcitx5-chinese-addons (5.0.2-2) unstable; urgency=medium
+
+  * Rebuild before Debian 11 release.
+  * debian/control: Bump Standards-Version to 4.5.1.
+  * Let fcitx5-chinese-addons package recommends fcitx5.
+  * Mark that fcitx5-chinese-addons package enhances fcitx5.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 26 Dec 2020 12:43:38 -0500
+
+fcitx5-chinese-addons (5.0.2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release
+  * Fix uscan watch file syntax
+  * Refresh patches
+  * Bump fcitx5 and libime version
+  * Using icon with org.fcitx.Fcitx5 prefix
+  * Fix appstream metainfo file install path
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 05 Dec 2020 19:54:20 +0800
+
+fcitx5-chinese-addons (5.0.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release
+  * Apply Multi-Arch hints
+  * Bump fcitx5 to 5.0.1
+  * Bump libime to 1.0.1
+  * Add appstream to B-D
+  * Install appstream metainfo
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 07 Nov 2020 01:23:58 +0800
+
+fcitx5-chinese-addons (0.0~git20201028.930b4c2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream snapshot.
+  * as-needed LDFLAGS is not needed since bullseye
+  * Don't ignore test result
+  * Remove Multi-Arch same annotation.
+    There are conflict files in /usr/share
+  * Add pystroke and pytable components
+  * Refresh patches
+  * Bump fcitx5 to 0.0~git20201030
+  * Bump libime to 0.0~git20201029
+  * Fix pystroke and pytable path when testing
+  * Temporary disable testchttrans
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 31 Oct 2020 23:35:29 +0800
+
+fcitx5-chinese-addons (0.0~git20200626.dfa59e5-3) unstable; urgency=medium
+
+  * Manual rebuild for opencc 1.1+ transition.
+  * debian/rules: Drop unnecessary linker flags.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 04 Jul 2020 10:58:09 -0400
+
+fcitx5-chinese-addons (0.0~git20200626.dfa59e5-2) unstable; urgency=medium
+
+  * Team upload.
+  * Bump libime to 0.0~git20200626
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 03 Jul 2020 13:27:34 +0800
+
+fcitx5-chinese-addons (0.0~git20200626.dfa59e5-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream snapshot. (Closes: #957196)
+  * Bump debhelper-compat to 13
+  * Refresh patches
+  * Bump fcitx5 to 0.0~git20200626.2e9821a
+
+ -- Shengjing Zhu <zhsj@debian.org>  Thu, 02 Jul 2020 12:35:06 +0800
+
+fcitx5-chinese-addons (0.0~git20200409.5a087da-2) unstable; urgency=medium
+
+  * Team upload.
+  * Add qtbase5-dev to Build-Depends
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 10 Apr 2020 23:57:55 +0800
+
+fcitx5-chinese-addons (0.0~git20200409.5a087da-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream snapshot.
+  * Only build depend qtwebengine on available arch
+  * Bump fcitx5 to 0.0~git20200409.6409547
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 10 Apr 2020 23:16:52 +0800
+
+fcitx5-chinese-addons (0.0~git20200323.346414a-1) unstable; urgency=medium
+
+  * Team upload.
+  * Add patch to rename icon to fcitx5
+  * Install new icons
+  * Bump libime to 0.0~git20200318
+
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 24 Mar 2020 04:37:25 +0800
+
+fcitx5-chinese-addons (0.0~git20200311.25bd23c-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream snapshot.
+  * Update debian/copyright info for new version.
+  * Bump libimepinyin-dev to 0.0~git20200310.
+  * Add libime-bin to Build-Depends.
+  * Install emoji dict to fcitx5-pinyin package.
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 13 Mar 2020 00:58:25 +0800
+
+fcitx5-chinese-addons (0.0~git20200117.4261e23-2) unstable; urgency=medium
+
+  * Source-only upload to allow testing migration.
+  * debian/control: Bump Standards-Version to 4.5.0.
+
+ -- Boyuan Yang <byang@debian.org>  Thu, 06 Feb 2020 22:56:15 -0500
+
+fcitx5-chinese-addons (0.0~git20200117.4261e23-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #949328)
+
+ -- Boyuan Yang <byang@debian.org>  Thu, 02 Jan 2020 20:33:28 -0800

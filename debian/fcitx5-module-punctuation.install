@@ -1,0 +1,5 @@
+usr/lib/*/fcitx5/libpunctuation.so
+usr/share/fcitx5/addon/punctuation.conf
+usr/share/fcitx5/punctuation/
+usr/share/icons/hicolor/*/apps/fcitx-punc-*
+usr/share/icons/hicolor/*/apps/org.fcitx.Fcitx5.fcitx-punc-*
