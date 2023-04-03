@@ -12,17 +12,16 @@
 #include <fcitx-utils/testing.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputmethodmanager.h>
+#include <fcitx/inputpanel.h>
 #include <fcitx/instance.h>
 #include <iostream>
 
 using namespace fcitx;
 
 void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
-    dispatcher->schedule([instance]() {
+    dispatcher->schedule([dispatcher, instance]() {
         auto *pinyin = instance->addonManager().addon("pinyin", true);
         FCITX_ASSERT(pinyin);
-    });
-    dispatcher->schedule([dispatcher, instance]() {
         auto defaultGroup = instance->inputMethodManager().currentGroup();
         defaultGroup.inputMethodList().clear();
         defaultGroup.inputMethodList().push_back(
@@ -37,6 +36,7 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         testfrontend->call<ITestFrontend::pushCommitExpectation>("俺");
         testfrontend->call<ITestFrontend::pushCommitExpectation>("ni");
         testfrontend->call<ITestFrontend::pushCommitExpectation>("ni");
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("你hao");
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
                                                     false);
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
@@ -56,6 +56,84 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("KP_Enter"),
+                                                    false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        auto ic = instance->inputContextManager().findByUUID(uuid);
+        FCITX_ASSERT(ic);
+        // Make a partial selection, we do search because the data might change.
+        auto candList = ic->inputPanel().candidateList();
+        for (int i = 0; i < candList->size(); i++) {
+            auto &candidate = candList->candidate(i);
+            if (candidate.text().toString() == "你") {
+                candidate.select(ic);
+                break;
+            }
+        }
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Return"), false);
+
+        // Test switch input method.
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("nihao");
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("你hao");
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        // Make a partial selection, we do search because the data might change.
+        candList = ic->inputPanel().candidateList();
+        for (int i = 0; i < candList->size(); i++) {
+            auto &candidate = candList->candidate(i);
+            if (candidate.text().toString() == "你") {
+                candidate.select(ic);
+                break;
+            }
+        }
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+
+        RawConfig config;
+        config.setValueByPath("SwitchInputMethodBehavior",
+                              "Commit default selection");
+        pinyin->setConfig(config);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        auto sentence =
+            ic->inputPanel().candidateList()->candidate(0).text().toString();
+        testfrontend->call<ITestFrontend::pushCommitExpectation>(sentence);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+
+        config.setValueByPath("SwitchInputMethodBehavior", "Clear");
+        pinyin->setConfig(config);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("a"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
                                                     false);
 
         dispatcher->schedule([dispatcher, instance]() {

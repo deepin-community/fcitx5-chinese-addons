@@ -7,16 +7,19 @@ target_link_libraries(pinyin Fcitx5::Core Fcitx5::Config LibIME::Pinyin Boost::i
 if (TARGET Fcitx5::Module::LuaAddonLoader)
     target_compile_definitions(pinyin PRIVATE -DFCITX_HAS_LUA)
     target_link_libraries(pinyin Fcitx5::Module::LuaAddonLoader)
-    install(FILES pinyin.lua DESTINATION "${FCITX_INSTALL_PKGDATADIR}/lua/imeapi/extensions")
+    install(FILES pinyin.lua DESTINATION "${FCITX_INSTALL_PKGDATADIR}/lua/imeapi/extensions"
+            COMPONENT config)
 endif()
 
 install(TARGETS pinyin DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
 fcitx5_translate_desktop_file(pinyin.conf.in pinyin.conf)
 fcitx5_translate_desktop_file(shuangpin.conf.in shuangpin.conf)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pinyin.conf" "${CMAKE_CURRENT_BINARY_DIR}/shuangpin.conf" DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/inputmethod")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pinyin.conf" "${CMAKE_CURRENT_BINARY_DIR}/shuangpin.conf" DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/inputmethod"
+        COMPONENT config)
 configure_file(pinyin-addon.conf.in.in pinyin-addon.conf.in)
 fcitx5_translate_desktop_file("${CMAKE_CURRENT_BINARY_DIR}/pinyin-addon.conf.in" pinyin-addon.conf)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pinyin-addon.conf" RENAME pinyin.conf DESTINATION "${FCITX_INSTALL_PKGDATADIR}/addon")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pinyin-addon.conf" RENAME pinyin.conf DESTINATION "${FCITX_INSTALL_PKGDATADIR}/addon"
+        COMPONENT config)
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/emoji.dict"

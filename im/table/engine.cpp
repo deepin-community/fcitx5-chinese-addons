@@ -69,6 +69,25 @@ TableEngine::TableEngine(Instance *instance)
             auto *state = inputContext->propertyFor(&factory_);
             state->handle2nd3rdCandidate(keyEvent);
         }));
+
+    predictionAction_.setShortText(*config_.predictionEnabled
+                                       ? _("Prediction Enabled")
+                                       : _("Prediction Disabled"));
+    predictionAction_.setLongText(_("Show prediction words"));
+    predictionAction_.connect<SimpleAction::Activated>(
+        [this](InputContext *ic) {
+            config_.predictionEnabled.setValue(!(*config_.predictionEnabled));
+            saveConfig();
+            predictionAction_.setShortText(*config_.predictionEnabled
+                                               ? _("Prediction Enabled")
+                                               : _("Prediction Disabled"));
+            predictionAction_.setIcon(*config_.predictionEnabled
+                                          ? "fcitx-remind-active"
+                                          : "fcitx-remind-inactive");
+            predictionAction_.update(ic);
+        });
+    instance_->userInterfaceManager().registerAction("table-prediction",
+                                                     &predictionAction_);
 }
 
 TableEngine::~TableEngine() {}
@@ -96,6 +115,13 @@ void TableEngine::activate(const fcitx::InputMethodEntry &entry,
             inputContext->statusArea().addAction(StatusGroup::InputMethod,
                                                  action);
         }
+    }
+    if (context && context->prediction()) {
+        predictionAction_.setIcon(*config_.predictionEnabled
+                                      ? "fcitx-remind-active"
+                                      : "fcitx-remind-inactive");
+        inputContext->statusArea().addAction(StatusGroup::InputMethod,
+                                             &predictionAction_);
     }
 }
 
@@ -142,25 +168,32 @@ void TableEngine::save() { ime_->saveAll(); }
 
 const libime::PinyinDictionary &TableEngine::pinyinDict() {
     if (!pinyinLoaded_) {
-        try {
-            const auto &standardPath = StandardPath::global();
-            auto systemDictFile = standardPath.open(StandardPath::Type::Data,
-                                                    "libime/sc.dict", O_RDONLY);
-            if (systemDictFile.isValid()) {
+        std::string_view dicts[] = {"sc.dict", "extb.dict"};
+        static_assert(FCITX_ARRAY_SIZE(dicts) <=
+                      libime::PinyinDictionary::UserDict + 1);
+        for (size_t i = 0; i < FCITX_ARRAY_SIZE(dicts); i++) {
+            try {
+                const auto &standardPath = StandardPath::global();
+                auto systemDictFile = standardPath.open(
+                    StandardPath::Type::Data,
+                    stringutils::joinPath("libime", dicts[i]), O_RDONLY);
+                if (!systemDictFile.isValid()) {
+                    systemDictFile = standardPath.open(
+                        StandardPath::Type::Data,
+                        stringutils::joinPath(LIBIME_INSTALL_PKGDATADIR,
+                                              dicts[i]),
+                        O_RDONLY);
+                }
+
                 boost::iostreams::stream_buffer<
                     boost::iostreams::file_descriptor_source>
                     buffer(systemDictFile.fd(),
                            boost::iostreams::file_descriptor_flags::
                                never_close_handle);
                 std::istream in(&buffer);
-                pinyinDict_.load(libime::PinyinDictionary::SystemDict, in,
-                                 libime::PinyinDictFormat::Binary);
-            } else {
-                pinyinDict_.load(libime::PinyinDictionary::SystemDict,
-                                 LIBIME_INSTALL_PKGDATADIR "/sc.dict",
-                                 libime::PinyinDictFormat::Binary);
+                pinyinDict_.load(i, in, libime::PinyinDictFormat::Binary);
+            } catch (const std::exception &) {
             }
-        } catch (const std::exception &) {
         }
         pinyinLoaded_ = true;
     }
