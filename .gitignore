@@ -1,1 +1,15 @@
-.pc/
+build*/
+.*
+!.git*
+.git/
+*.tar.*
+*.kdev4
+*.kate-swp
+*.orig
+tags
+astyle.sh
+cscope.*
+*.part
+XF86keysym.h
+keysymdef.h
+*~

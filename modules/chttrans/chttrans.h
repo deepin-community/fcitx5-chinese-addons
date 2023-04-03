@@ -34,10 +34,10 @@ FCITX_CONFIGURATION(
 #ifdef ENABLE_OPENCC
     fcitx::Option<std::string> openCCS2TProfile{
         this, "OpenCCS2TProfile",
-        "OpenCC profile for Simplified to Traditional", ""};
+        _("OpenCC profile for Simplified to Traditional"), ""};
     fcitx::Option<std::string> openCCT2SProfile{
         this, "OpenCCT2SProfile",
-        "OpenCC profile for Traditional to Simplified", ""};
+        _("OpenCC profile for Traditional to Simplified"), ""};
 #endif
 );
 
@@ -73,12 +73,12 @@ class Chttrans final : public fcitx::AddonInstance {
         ToggleAction(Chttrans *parent) : parent_(parent) {}
 
         std::string shortText(fcitx::InputContext *ic) const override {
-            return parent_->convertType(ic) == ChttransIMType::Trad
+            return parent_->currentType(ic) == ChttransIMType::Trad
                        ? _("Traditional Chinese")
                        : _("Simplified Chinese");
         }
         std::string icon(fcitx::InputContext *ic) const override {
-            return parent_->convertType(ic) == ChttransIMType::Trad
+            return parent_->currentType(ic) == ChttransIMType::Trad
                        ? "fcitx-chttrans-active"
                        : "fcitx-chttrans-inactive";
         }
@@ -104,8 +104,14 @@ public:
     }
     void populateConfig();
 
-    bool needConvert(fcitx::InputContext *inputContext);
-    ChttransIMType convertType(fcitx::InputContext *inputContext);
+    // The conversion type.
+    ChttransIMType convertType(fcitx::InputContext *inputContext) const;
+
+    // Input method type.
+    ChttransIMType inputMethodType(fcitx::InputContext *inputContext) const;
+
+    // The actual language consider both input method & conversion.
+    ChttransIMType currentType(fcitx::InputContext *inputContext) const;
     std::string convert(ChttransIMType type, const std::string &str);
     void toggle(fcitx::InputContext *ic);
 
@@ -121,6 +127,7 @@ private:
     std::unordered_map<ChttransEngine, std::unique_ptr<ChttransBackend>,
                        fcitx::EnumHash>
         backends_;
+    ChttransBackend *currentBackend_ = nullptr;
     std::unordered_set<std::string> enabledIM_;
     fcitx::ScopedConnection outputFilterConn_;
     fcitx::ScopedConnection commitFilterConn_;

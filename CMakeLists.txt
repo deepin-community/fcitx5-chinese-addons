@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6.0)
-project(fcitx5-chinese-addons VERSION 5.0.11)
+project(fcitx5-chinese-addons VERSION 5.0.17)
 
 find_package(ECM REQUIRED 1.0.0)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -54,8 +54,8 @@ if (ENABLE_GUI)
 endif()
 
 find_package(Boost 1.61 REQUIRED COMPONENTS iostreams)
-find_package(LibIMEPinyin 1.0.11 REQUIRED)
-find_package(LibIMETable 1.0.3 REQUIRED)
+find_package(LibIMEPinyin 1.0.14 REQUIRED)
+find_package(LibIMETable 1.0.12 REQUIRED)
 
 if (ENABLE_CLOUDPINYIN)
     pkg_check_modules(Curl REQUIRED IMPORTED_TARGET "libcurl")

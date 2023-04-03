@@ -12,6 +12,7 @@
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/log.h>
 #include <fcitx/candidatelist.h>
+#include <libime/core/prediction.h>
 #include <libime/core/userlanguagemodel.h>
 #include <libime/table/tablebaseddictionary.h>
 #include <tuple>
@@ -81,6 +82,9 @@ FCITX_CONFIGURATION(
          Key(FcitxKey_9), Key(FcitxKey_0)}};
     Option<int, IntConstrain> pageSize{this, "PageSize", _("Page size"), 5,
                                        IntConstrain(3, 10)};
+    SubConfigOption punctuationMap{this, "TableGlobal",
+                                   _("Table Global Options"),
+                                   "fcitx://config/addon/table"};
     // Fcitx 4 default behavior.
     Option<bool> commitAfterSelect{this, "CommitAfterSelect",
                                    _("Commit after auto select candidates"),
@@ -104,6 +108,15 @@ FCITX_CONFIGURATION(
     Option<bool> firstCandidateAsPreedit{this, "FirstCandidateAsPreedit",
                                          _("First candidate as Preedit"),
                                          false};
+    Option<bool> preeditCursorPositionAtBeginning{
+        this, "PreeditCursorPositionAtBeginning",
+        _("Fix embedded preedit cursor at the beginning of the preedit"),
+#ifdef ANDROID
+        false
+#else
+        true
+#endif
+    };
     Option<Key, KeyConstrain> quickphrase{
         this,
         "QuickPhraseKey",
@@ -222,6 +235,15 @@ FCITX_CONFIGURATION(
               "or selected by user once, it will be added as user phrase. -1 "
               "means the maximum code length of the table. 0 means disable "
               "this feature. "))};
+    OptionWithAnnotation<bool, ToolTipAnnotation> autoPhraseWithPhrase{
+        this,
+        "AutoPhraseWithPhrase",
+        _("Learn auto phrase with phrase"),
+        false,
+        {},
+        {},
+        ToolTipAnnotation(_("Whether to learn new phrase from other phrases or "
+                            "just single characters."))};
     Option<std::string> markerForAutoPhrase{
         this, "MarkerForAutoPhrase",
         _("Marker for auto phrase in the candidates"), "*"};
@@ -248,6 +270,8 @@ FCITX_CONFIGURATION(
         candidateLayoutHint{this, "CandidateLayoutHint",
                             _("Candidate List orientation"),
                             CandidateLayoutHint::NotSet};
+    Option<bool> keypadAsInput{this, "KeypadAsInput",
+                               _("Allow use keypad key as table input"), false};
     NoSaveOption<std::vector<std::string>> autoRuleSet{this, "AutoRuleSet",
                                                        _("Auto rule set")};);
 

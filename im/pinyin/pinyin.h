@@ -27,16 +27,25 @@
 
 namespace fcitx {
 
-struct OptionalHideInDescription {
+#ifdef ANDROID
+static constexpr bool isAndroid = true;
+#else
+static constexpr bool isAndroid = false;
+#endif
+
+template <typename Base = NoAnnotation>
+struct OptionalHideInDescriptionBase : public Base {
     void setHidden(bool hidden) { hidden_ = hidden; }
 
     bool skipDescription() { return hidden_; }
-    bool skipSave() { return false; }
-    void dumpDescription(RawConfig &) const {}
+    using Base::dumpDescription;
+    using Base::skipSave;
 
 private:
     bool hidden_ = false;
 };
+
+using OptionalHideInDescription = OptionalHideInDescriptionBase<>;
 
 class OptionalHiddenSubConfigOption : public SubConfigOption {
 public:
@@ -50,6 +59,12 @@ private:
     bool hidden_ = false;
 };
 
+enum class SwitchInputMethodBehavior { Clear, CommitPreedit, CommitDefault };
+
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(SwitchInputMethodBehavior, N_("Clear"),
+                                 N_("Commit current preedit"),
+                                 N_("Commit default selection"))
+
 FCITX_CONFIG_ENUM(ShuangpinProfileEnum, Ziranma, MS, Ziguang, ABC,
                   Zhongwenzhixing, PinyinJiajia, Xiaohe, Custom)
 
@@ -60,7 +75,7 @@ FCITX_CONFIG_ENUM_I18N_ANNOTATION(ShuangpinProfileEnum, N_("Ziranma"), N_("MS"),
 
 FCITX_CONFIGURATION(
     FuzzyConfig, Option<bool> ue{this, "VE_UE", _("ue -> ve"), true};
-    Option<bool> ng{this, "NG_GN", _("gn -> ng"), true};
+    Option<bool> commonTypo{this, "NG_GN", _("Common Typo"), true};
     Option<bool> inner{this, "Inner", _("Inner Segment (xian -> xi'an)"), true};
     Option<bool> innerShort{this, "InnerShort",
                             _("Inner Segment for Short Pinyin (qie -> qi'e)"),
@@ -68,7 +83,7 @@ FCITX_CONFIGURATION(
     Option<bool> partialFinal{this, "PartialFinal",
                               _("Match partial finals (e -> en, eng, ei)"),
                               true};
-    Option<bool> partialSp{
+    OptionWithAnnotation<bool, OptionalHideInDescription> partialSp{
         this, "PartialSp",
         _("Match partial shuangpin if input length is longer than 4"), false};
     Option<bool> v{this, "V_U", _("u <-> v"), false};
@@ -86,17 +101,21 @@ FCITX_CONFIGURATION(
 
 FCITX_CONFIGURATION(
     PinyinEngineConfig,
-    OptionWithAnnotation<ShuangpinProfileEnum,
-                         ShuangpinProfileEnumI18NAnnotation>
+    OptionWithAnnotation<
+        ShuangpinProfileEnum,
+        OptionalHideInDescriptionBase<ShuangpinProfileEnumI18NAnnotation>>
         shuangpinProfile{this, "ShuangpinProfile", _("Shuangpin Profile"),
                          ShuangpinProfileEnum::Ziranma};
-    Option<bool> showShuangpinMode{this, "ShowShuangpinMode",
-                                   _("Show current shuangpin mode"), true};
+    OptionWithAnnotation<bool, OptionalHideInDescription> showShuangpinMode{
+        this, "ShowShuangpinMode", _("Show current shuangpin mode"), true};
     Option<int, IntConstrain> pageSize{this, "PageSize", _("Page size"), 7,
                                        IntConstrain(3, 10)};
     Option<bool> spellEnabled{this, "SpellEnabled", _("Enable Spell"), true};
     Option<bool> emojiEnabled{this, "EmojiEnabled", _("Enable Emoji"), true};
     Option<bool> chaiziEnabled{this, "ChaiziEnabled", _("Enable Chaizi"), true};
+    Option<bool> extBEnabled{this, "ExtBEnabled",
+                             _("Enable Characters in Unicode CJK Extension B"),
+                             !isAndroid};
     OptionWithAnnotation<bool, OptionalHideInDescription> cloudPinyinEnabled{
         this, "CloudPinyinEnabled", _("Enable Cloud Pinyin"), false};
     Option<int, IntConstrain, DefaultMarshaller<int>, OptionalHideInDescription>
@@ -107,13 +126,19 @@ FCITX_CONFIGURATION(
                                           true};
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
-        _("Fix embedded preedit cursor at the beginning of the preedit"), true};
+        _("Fix embedded preedit cursor at the beginning of the preedit"),
+        !isAndroid};
     Option<bool> showActualPinyinInPreedit{
         this, "PinyinInPreedit", _("Show complete pinyin in preedit"), false};
     Option<bool> predictionEnabled{this, "Prediction", _("Enable Prediction"),
                                    false};
     Option<int, IntConstrain> predictionSize{
         this, "PredictionSize", _("Prediction Size"), 10, IntConstrain(3, 20)};
+    OptionWithAnnotation<SwitchInputMethodBehavior,
+                         SwitchInputMethodBehaviorI18NAnnotation>
+        switchInputMethodBehavior{this, "SwitchInputMethodBehavior",
+                                  _("Action when switching input method"),
+                                  SwitchInputMethodBehavior::CommitPreedit};
     KeyListOption forgetWord{this,
                              "ForgetWord",
                              _("Forget word"),
@@ -157,12 +182,17 @@ FCITX_CONFIGURATION(
         {},
         KeyListConstrain({KeyConstrainFlag::AllowModifierLess,
                           KeyConstrainFlag::AllowModifierOnly})};
+    Option<bool> useKeypadAsSelectionKey{
+        this, "UseKeypadAsSelection", _("Use Keypad as Selection key"), false};
     KeyListOption selectCharFromPhrase{
         this,
         "ChooseCharFromPhrase",
         _("Choose Character from Phrase"),
         {Key("["), Key("]")},
         KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
+    Option<bool> useBackSpaceToUnselect{
+        this, "BackSpaceToUnselect", _("Use BackSpace to cancel the selection"),
+        true};
     KeyListOption selectByStroke{
         this,
         "FilterByStroke",
@@ -235,12 +265,16 @@ public:
     void invokeActionImpl(const InputMethodEntry &entry,
                           InvokeActionEvent &event) override;
 
-    const Configuration *getConfig() const override { return &config_; }
+    const Configuration *getConfig() const override;
+    const Configuration *
+    getConfigForInputMethod(const InputMethodEntry &entry) const override;
+
     void setConfig(const RawConfig &config) override {
         config_.load(config, true);
         safeSaveAsIni(config_, "conf/pinyin.conf");
         populateConfig();
     }
+
     void setSubConfig(const std::string &path,
                       const fcitx::RawConfig &) override;
 
@@ -275,6 +309,7 @@ private:
     void updatePreedit(InputContext *inputContext) const;
 
     std::pair<Text, Text> preedit(InputContext *inputContext) const;
+    std::string preeditCommitString(InputContext *inputContext) const;
 
 #ifdef FCITX_HAS_LUA
     std::vector<std::string>
@@ -286,10 +321,12 @@ private:
 
     Instance *instance_;
     PinyinEngineConfig config_;
+    PinyinEngineConfig pyConfig_;
     std::unique_ptr<libime::PinyinIME> ime_;
     std::unordered_map<std::string, std::unordered_set<uint32_t>>
         quickphraseTriggerDict_;
     KeyList selectionKeys_;
+    KeyList numpadSelectionKeys_;
     FactoryFor<PinyinState> factory_;
     SimpleAction predictionAction_;
     libime::Prediction prediction_;
@@ -308,6 +345,8 @@ private:
     FCITX_ADDON_DEPENDENCY_LOADER(imeapi, instance_->addonManager());
 
     bool hasCloudPinyin_ = false;
+
+    static constexpr size_t NumBuiltInDict = 3;
 };
 
 class PinyinEngineFactory : public AddonFactory {
