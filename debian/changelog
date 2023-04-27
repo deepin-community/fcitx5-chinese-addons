@@ -1,8 +1,14 @@
+fcitx5-chinese-addons (5.0.17-0deepin1) unstable; urgency=medium
+
+  * fix missing pinyin.lua
+
+ -- zsien <quezhiyong@uniontech.com>  Thu, 27 Apr 2023 14:26:24 +0800
+
 fcitx5-chinese-addons (5.0.17-0deepin) unstable; urgency=medium
 
   * New upstream release.
 
- -- zsien <quezhiyong@uniontech.com>  Mon, 03 Apr 2023 14:34:23 +080
+ -- zsien <quezhiyong@uniontech.com>  Mon, 03 Apr 2023 14:34:23 +0800
 
 fcitx5-chinese-addons (5.0.11-1) UNRELEASED; urgency=medium
 
