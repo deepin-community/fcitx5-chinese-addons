@@ -9,6 +9,7 @@ Build-Depends:
  cmake (>= 3.6.0),
  debhelper-compat (= 13),
  extra-cmake-modules,
+ fcitx5-module-lua-dev,
  fcitx5-modules-dev (>= 5.0.11),
  gettext,
  libboost-iostreams-dev,
@@ -43,6 +44,7 @@ Depends:
  ${misc:Depends},
 Recommends:
  fcitx5,
+ fcitx5-module-lua,
 Enhances:
  fcitx5,
 Description: Chinese-related addon for fcitx5 (metapackage)
