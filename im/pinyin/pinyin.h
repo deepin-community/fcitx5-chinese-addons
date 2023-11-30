@@ -7,31 +7,30 @@
 #ifndef _PINYIN_PINYIN_H_
 #define _PINYIN_PINYIN_H_
 
+#include "customphrase.h"
 #include <fcitx-config/configuration.h>
 #include <fcitx-config/iniparser.h>
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/i18n.h>
+#include <fcitx-utils/misc.h>
 #include <fcitx-utils/standardpath.h>
 #include <fcitx/action.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addonmanager.h>
+#include <fcitx/event.h>
+#include <fcitx/inputcontext.h>
 #include <fcitx/inputcontextproperty.h>
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
-#include <libime/core/prediction.h>
 #include <libime/pinyin/pinyincontext.h>
 #include <libime/pinyin/pinyinime.h>
+#include <libime/pinyin/pinyinprediction.h>
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
 namespace fcitx {
-
-#ifdef ANDROID
-static constexpr bool isAndroid = true;
-#else
-static constexpr bool isAndroid = false;
-#endif
 
 template <typename Base = NoAnnotation>
 struct OptionalHideInDescriptionBase : public Base {
@@ -115,25 +114,35 @@ FCITX_CONFIGURATION(
     Option<bool> chaiziEnabled{this, "ChaiziEnabled", _("Enable Chaizi"), true};
     Option<bool> extBEnabled{this, "ExtBEnabled",
                              _("Enable Characters in Unicode CJK Extension B"),
-                             !isAndroid};
+                             !isAndroid()};
+    OptionalHiddenSubConfigOption cloudpinyin{
+        this, "CloudPinyin", _("Cloud Pinyin"),
+        "fcitx://config/addon/cloudpinyin"};
     OptionWithAnnotation<bool, OptionalHideInDescription> cloudPinyinEnabled{
         this, "CloudPinyinEnabled", _("Enable Cloud Pinyin"), false};
     Option<int, IntConstrain, DefaultMarshaller<int>, OptionalHideInDescription>
         cloudPinyinIndex{this, "CloudPinyinIndex", _("Cloud Pinyin Index"), 2,
                          IntConstrain(1, 10)};
+    OptionWithAnnotation<bool, OptionalHideInDescription> cloudPinyinAnimation{
+        this, "CloudPinyinAnimation",
+        _("Show animation when Cloud Pinyin is loading"), true};
+    OptionWithAnnotation<bool, OptionalHideInDescription>
+        keepCloudPinyinPlaceHolder{this, "KeepCloudPinyinPlaceHolder",
+                                   _("Always show Cloud Pinyin place holder"),
+                                   false};
     Option<bool> showPreeditInApplication{this, "PreeditInApplication",
                                           _("Show preedit within application"),
                                           true};
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
         _("Fix embedded preedit cursor at the beginning of the preedit"),
-        !isAndroid};
+        !isAndroid()};
     Option<bool> showActualPinyinInPreedit{
         this, "PinyinInPreedit", _("Show complete pinyin in preedit"), false};
     Option<bool> predictionEnabled{this, "Prediction", _("Enable Prediction"),
-                                   false};
+                                   isAndroid() ? true : false};
     Option<int, IntConstrain> predictionSize{
-        this, "PredictionSize", _("Prediction Size"), 10, IntConstrain(3, 20)};
+        this, "PredictionSize", _("Prediction Size"), 14, IntConstrain(3, 40)};
     OptionWithAnnotation<SwitchInputMethodBehavior,
                          SwitchInputMethodBehaviorI18NAnnotation>
         switchInputMethodBehavior{this, "SwitchInputMethodBehavior",
@@ -206,17 +215,16 @@ FCITX_CONFIGURATION(
         this, "LongWordLengthLimit",
         _("Prompt long word length when input length over (0 for disable)"), 4,
         IntConstrain(0, 10)};
-    ExternalOption dictmanager{this, "DictManager", _("Dictionaries"),
+    ExternalOption dictmanager{this, "DictManager", _("Manage Dictionaries"),
                                "fcitx://config/addon/pinyin/dictmanager"};
+    ExternalOption customphrase{this, "CustomPhrase", _("Manage Custom Phrase"),
+                                "fcitx://config/addon/pinyin/customphrase"};
     SubConfigOption punctuationMap{
         this, "Punctuation", _("Punctuation"),
         "fcitx://config/addon/punctuation/punctuationmap/zh_CN"};
     SubConfigOption chttrans{
         this, "Chttrans", _("Simplified and Traditional Chinese Translation"),
         "fcitx://config/addon/chttrans"};
-    OptionalHiddenSubConfigOption cloudpinyin{
-        this, "CloudPinyin", _("Cloud Pinyin"),
-        "fcitx://config/addon/cloudpinyin"};
     Option<Key, KeyConstrain> quickphraseKey{
         this,
         "QuickPhraseKey",
@@ -238,10 +246,10 @@ FCITX_CONFIGURATION(
                            {_("Enter a string from the list will make it enter "
                               "quickphrase mode.")}};
     Option<FuzzyConfig> fuzzyConfig{this, "Fuzzy", _("Fuzzy Pinyin Settings")};
-    HiddenOption<bool> firstRun{this, "FirstRun", "FirstRun", true};);
+    HiddenOption<bool> firstRun{this, "FirstRun", "FirstRun", true};)
 
 class PinyinState;
-class EventSourceTime;
+struct EventSourceTime;
 class CandidateList;
 
 class PinyinEngine final : public InputMethodEngineV3 {
@@ -257,7 +265,7 @@ public:
     void reloadConfig() override;
     void reset(const InputMethodEntry &entry,
                InputContextEvent &event) override;
-    void doReset(InputContext *inputContext);
+    void doReset(InputContext *inputContext) const;
     void save() override;
     auto &factory() { return factory_; }
     std::string subMode(const InputMethodEntry &entry,
@@ -279,15 +287,19 @@ public:
                       const fcitx::RawConfig &) override;
 
     libime::PinyinIME *ime() { return ime_.get(); }
+    const auto &config() const { return config_; }
 
     void initPredict(InputContext *inputContext);
     void updatePredict(InputContext *inputContext);
-    std::unique_ptr<CandidateList>
-    predictCandidateList(const std::vector<std::string> &words);
+
     void updateUI(InputContext *inputContext);
 
-    void resetStroke(InputContext *inputContext);
-    void resetForgetCandidate(InputContext *inputContext);
+    void resetStroke(InputContext *inputContext) const;
+    void resetForgetCandidate(InputContext *inputContext) const;
+
+    FCITX_ADDON_DEPENDENCY_LOADER(cloudpinyin, instance_->addonManager());
+
+    const auto &selectionKeys() const { return selectionKeys_; }
 
 private:
     void cloudPinyinSelected(InputContext *inputContext,
@@ -297,9 +309,16 @@ private:
     bool handleCloudpinyinTrigger(KeyEvent &event);
     bool handle2nd3rdSelection(KeyEvent &event);
     bool handleCandidateList(KeyEvent &event);
+    bool handleNextPage(KeyEvent &event);
     bool handleStrokeFilter(KeyEvent &event);
     bool handleForgetCandidate(KeyEvent &event);
     bool handlePunc(KeyEvent &event);
+    bool handlePuncCandidate(KeyEvent &event);
+    bool handleCompose(KeyEvent &event);
+    void resetPredict(InputContext *inputContext);
+
+    std::string evaluateCustomPhrase(InputContext *inputContext,
+                                     std::string_view key);
 
     void populateConfig();
 
@@ -307,6 +326,10 @@ private:
     void updateForgetCandidate(InputContext *inputContext);
 
     void updatePreedit(InputContext *inputContext) const;
+    void updatePuncCandidate(InputContext *inputContext,
+                             const std::string &original,
+                             const std::vector<std::string> &candidates) const;
+    void updatePuncPreedit(InputContext *inputContext) const;
 
     std::pair<Text, Text> preedit(InputContext *inputContext) const;
     std::string preeditCommitString(InputContext *inputContext) const;
@@ -317,6 +340,7 @@ private:
 #endif
     void loadBuiltInDict();
     void loadExtraDict();
+    void loadCustomPhrase();
     void loadDict(const StandardPathFile &file);
 
     Instance *instance_;
@@ -329,13 +353,13 @@ private:
     KeyList numpadSelectionKeys_;
     FactoryFor<PinyinState> factory_;
     SimpleAction predictionAction_;
-    libime::Prediction prediction_;
+    libime::PinyinPrediction prediction_;
     std::unique_ptr<EventSource> deferEvent_;
     std::unique_ptr<EventSource> checkCloudPinyinAvailable_;
     std::unique_ptr<HandlerTableEntry<EventHandler>> event_;
+    CustomPhraseDict customPhrase_;
 
     FCITX_ADDON_DEPENDENCY_LOADER(quickphrase, instance_->addonManager());
-    FCITX_ADDON_DEPENDENCY_LOADER(cloudpinyin, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(fullwidth, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(chttrans, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(punctuation, instance_->addonManager());
@@ -343,8 +367,6 @@ private:
     FCITX_ADDON_DEPENDENCY_LOADER(pinyinhelper, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(spell, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(imeapi, instance_->addonManager());
-
-    bool hasCloudPinyin_ = false;
 
     static constexpr size_t NumBuiltInDict = 3;
 };

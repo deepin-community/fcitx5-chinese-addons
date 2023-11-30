@@ -1,5 +1,4 @@
 usr/lib/*/fcitx5/libpinyin.so
-usr/lib/*/fcitx5/qt5/libpinyindictmanager.so
 usr/share/fcitx5/addon/pinyin.conf
 usr/share/fcitx5/inputmethod/pinyin.conf
 usr/share/fcitx5/inputmethod/shuangpin.conf
