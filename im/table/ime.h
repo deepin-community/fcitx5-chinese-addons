@@ -11,6 +11,7 @@
 #include <fcitx-config/enum.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/log.h>
+#include <fcitx-utils/misc.h>
 #include <fcitx/candidatelist.h>
 #include <libime/core/prediction.h>
 #include <libime/core/userlanguagemodel.h>
@@ -59,6 +60,12 @@ FCITX_CONFIGURATION(
         _("Next Candidate"),
         {Key("Right")},
         KeyListConstrain(KeyConstrainFlag::AllowModifierLess)};
+    KeyListOption defaultCandidate{
+        this,
+        "DefaultCandidate",
+        _("Select Current Candidate"),
+        {Key(FcitxKey_space)},
+        KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
     KeyListOption secondCandidate{
         this,
         "SecondCandidate",
@@ -111,12 +118,7 @@ FCITX_CONFIGURATION(
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
         _("Fix embedded preedit cursor at the beginning of the preedit"),
-#ifdef ANDROID
-        false
-#else
-        true
-#endif
-    };
+        !isAndroid()};
     Option<Key, KeyConstrain> quickphrase{
         this,
         "QuickPhraseKey",
@@ -136,6 +138,8 @@ FCITX_CONFIGURATION(
     NoSaveOption<std::string> icon{this, "Icon", _("Icon")};
     Option<int> noSortInputLength{this, "NoSortInputLength",
                                   _("Don't sort word shorter than")};
+    Option<bool> sortByCodeLength{this, "SortByCodeLength",
+                                  _("Sort candidate by code length"), true};
     OptionWithAnnotation<OrderPolicy, OrderPolicyI18NAnnotation> orderPolicy{
         this, "OrderPolicy", _("Order policy")};
     OptionWithAnnotation<bool, ToolTipAnnotation> useSystemLanguageModel{
@@ -304,6 +308,7 @@ public:
     void updateConfig(const std::string &name, const RawConfig &config);
 
     void releaseUnusedDict(const std::unordered_set<std::string> &names);
+    void reloadAllDict();
 
 private:
     libime::LanguageModelResolver *lm_;
