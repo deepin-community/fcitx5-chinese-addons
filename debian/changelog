@@ -1,3 +1,9 @@
+fcitx5-chinese-addons (5.1.2-2deepin1) unstable; urgency=medium
+
+  * remove taiwan flag
+
+ -- zsien <quezhiyong@deepin.org>  Tue, 11 Jun 2024 14:15:46 +0800
+
 fcitx5-chinese-addons (5.1.2-1) unstable; urgency=medium
 
   * New upstream release.
