@@ -3,17 +3,16 @@
 # This file is distributed under the same license as the fcitx5-chinese-addons package.
 #
 # Translators:
-# 63f334ffc0709ba0fc2361b80bf3c0f0_00ffd1e <ab96c93ca0ac55ba7fa06385427e60dd_878890>, 2021
+# Omer I.S. <omeritzicschwartz@gmail.com>, 2021
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: fcitx5-chinese-addons\n"
 "Report-Msgid-Bugs-To: fcitx-dev@googlegroups.com\n"
-"POT-Creation-Date: 2023-11-02 12:11+0000\n"
+"POT-Creation-Date: 2022-11-11 20:25+0000\n"
 "PO-Revision-Date: 2017-11-23 04:30+0000\n"
-"Last-Translator: 63f334ffc0709ba0fc2361b80bf3c0f0_00ffd1e "
-"<ab96c93ca0ac55ba7fa06385427e60dd_878890>, 2021\n"
-"Language-Team: Hebrew (https://app.transifex.com/fcitx/teams/12005/he/)\n"
+"Last-Translator: Omer I.S. <omeritzicschwartz@gmail.com>, 2021\n"
+"Language-Team: Hebrew (https://www.transifex.com/fcitx/teams/12005/he/)\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -21,15 +20,15 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % "
 "1 == 0) ? 1: (n % 10 == 0 && n % 1 == 0 && n > 10) ? 2 : 3;\n"
 
-#: im/table/state.cpp:1146
+#: im/table/state.cpp:1011
 msgid " Return for "
 msgstr ""
 
-#: im/table/state.cpp:1143
+#: im/table/state.cpp:1008
 msgid " for "
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:140
+#: gui/pinyindictmanager/pinyindictmanager.cpp:138
 msgid "%1 already exists, do you want to overwrite this dictionary?"
 msgstr ""
 
@@ -37,90 +36,41 @@ msgstr ""
 msgid "%1% Downloaded."
 msgstr ""
 
-#. i18n: file: gui/customphraseeditor/customphraseeditor.ui:41
-#. i18n: ectx: property (text), widget (QPushButton, addButton_)
-#: rc.cpp:9
-#, kde-format
-msgid "&Add"
-msgstr ""
-
 #: gui/pinyindictmanager/pinyindictmanager.cpp:37
 msgid "&Browse Sogou Cell Dictionary Online"
 msgstr ""
 
-#. i18n: file: gui/customphraseeditor/customphraseeditor.ui:84
-#. i18n: ectx: property (text), widget (QPushButton, clearButton_)
-#: rc.cpp:21
-#, kde-format
-msgid "&Clear"
-msgstr ""
-
 #. i18n: file: gui/pinyindictmanager/pinyindictmanager.ui:55
 #. i18n: ectx: property (text), widget (QPushButton, clearDictButton_)
-#: rc.cpp:45
+#: rc.cpp:24
 #, kde-format
-msgid "&Clear Dictionary"
+msgid "&Clear Dict"
 msgstr ""
 
 #: gui/pinyindictmanager/pinyindictmanager.cpp:44
 msgid "&Clear User Data"
 msgstr ""
 
-#. i18n: file: gui/customphraseeditor/customphraseeditor.ui:73
-#. i18n: ectx: property (text), widget (QPushButton, externalEditor_)
-#: rc.cpp:18
-#, kde-format
-msgid "&External Editor"
-msgstr ""
-
 #. i18n: file: gui/pinyindictmanager/pinyindictmanager.ui:22
 #. i18n: ectx: property (text), widget (QPushButton, importButton_)
-#: rc.cpp:36
+#: rc.cpp:15
 #, kde-format
 msgid "&Import"
 msgstr ""
 
-#. i18n: file: gui/pinyindictmanager/pinyindictmanager.ui:66
-#. i18n: ectx: property (text), widget (QPushButton, openDirectoryButton_)
-#: rc.cpp:48
-#, kde-format
-msgid "&Open User Data Directory"
-msgstr ""
-
-#. i18n: file: gui/customphraseeditor/customphraseeditor.ui:52
-#. i18n: ectx: property (text), widget (QPushButton, removeButton_)
 #. i18n: file: gui/pinyindictmanager/pinyindictmanager.ui:33
 #. i18n: ectx: property (text), widget (QPushButton, removeButton_)
-#: rc.cpp:12 rc.cpp:39
+#: rc.cpp:18
 #, kde-format
 msgid "&Remove"
 msgstr ""
 
-#. i18n: file: gui/customphraseeditor/customphraseeditor.ui:63
-#. i18n: ectx: property (text), widget (QPushButton, helpButton_)
-#: rc.cpp:15
-#, kde-format
-msgid "&Usage"
-msgstr ""
-
-#: im/table/state.cpp:746
-msgctxt "Pinyin lookup delimeter"
-msgid ", "
-msgstr ""
-
-#: im/table/engine.h:41 im/pinyin/pinyin.h:71
+#: im/pinyin/pinyin.h:69
 msgid "ABC"
 msgstr "א״ב"
 
-#: im/pinyin/pinyin.h:149
+#: im/pinyin/pinyin.h:136
 msgid "Action when switching input method"
-msgstr ""
-
-#. i18n: file: gui/customphraseeditor/editordialog.ui:14
-#. i18n: ectx: property (windowTitle), widget (QDialog, EditorDialog)
-#: rc.cpp:3
-#, kde-format
-msgid "Add Phrase"
 msgstr ""
 
 #: org.fcitx.Fcitx5.Addon.ChineseAddons.metainfo.xml.in:8
@@ -129,7 +79,7 @@ msgid ""
 "to Fcitx"
 msgstr ""
 
-#: im/table/ime.h:237
+#: im/table/ime.h:233
 msgid ""
 "After committing every character, learn the new phrase based on the input "
 "history. If certain word is seen for multiple times or selected by user "
@@ -137,39 +87,31 @@ msgid ""
 "the table. 0 means disable this feature. "
 msgstr ""
 
-#: im/table/ime.h:278
-msgid "Allow use keypad key as table input"
-msgstr ""
-
-#: modules/punctuation/punctuation.h:42
+#: modules/punctuation/punctuation.h:41
 msgid "Alternative Mapping"
 msgstr ""
 
-#: im/pinyin/pinyin.h:131
-msgid "Always show Cloud Pinyin place holder"
-msgstr ""
-
-#: gui/pinyindictmanager/pinyindictmanager.cpp:365
+#: gui/pinyindictmanager/pinyindictmanager.cpp:363
 msgid "Are you sure to delete %1?"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:333
+#: gui/pinyindictmanager/pinyindictmanager.cpp:331
 msgid "Are you sure to delete all dictionaries?"
 msgstr ""
 
-#: im/table/ime.h:232
+#: im/table/ime.h:228
 msgid "Auto phrase length"
 msgstr ""
 
-#: im/table/ime.h:280
+#: im/table/ime.h:274
 msgid "Auto rule set"
 msgstr ""
 
-#: im/table/ime.h:178
+#: im/table/ime.h:174
 msgid "Auto select candidate"
 msgstr ""
 
-#: im/table/ime.h:204
+#: im/table/ime.h:200
 msgid "Auto select when no match is found"
 msgstr ""
 
@@ -185,23 +127,23 @@ msgstr ""
 msgid "Browse Sogou Cell Dict repository"
 msgstr ""
 
-#: im/table/ime.h:275
+#: im/table/ime.h:271
 msgid "Candidate List orientation"
 msgstr ""
 
 #: im/table/cangjie.conf.in.in:3
-msgid "Cangjie (Simplified Chinese)"
+msgid "Cangjie"
 msgstr ""
 
 #: org.fcitx.Fcitx5.Addon.ChineseAddons.metainfo.xml.in:7
 msgid "Chinese Addons"
 msgstr ""
 
-#: im/pinyin/pinyin.h:199
+#: im/pinyin/pinyin.h:186
 msgid "Choose Character from Phrase"
 msgstr ""
 
-#: im/pinyin/pinyin.h:63
+#: im/pinyin/pinyin.h:61
 msgid "Clear"
 msgstr ""
 
@@ -209,58 +151,58 @@ msgstr ""
 msgid "Clear &All Data"
 msgstr ""
 
-#: im/pinyin/pinyin.h:119 modules/cloudpinyin/cloudpinyin.conf.in.in:3
+#: im/pinyin/pinyin.h:214 modules/cloudpinyin/cloudpinyin.conf.in.in:3
 msgid "Cloud Pinyin"
 msgstr ""
 
-#: im/pinyin/pinyin.h:124
+#: im/pinyin/pinyin.h:118
 msgid "Cloud Pinyin Index"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1455
+#: im/pinyin/pinyin.cpp:1076
 msgid "Cloud Pinyin Status"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1457
+#: im/pinyin/pinyin.cpp:1078
 msgid "Cloud Pinyin is disabled."
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1456
+#: im/pinyin/pinyin.cpp:1077
 msgid "Cloud Pinyin is enabled."
 msgstr ""
 
-#: im/table/ime.h:105
+#: im/table/ime.h:98
 msgid "Commit Invalid Segment"
 msgstr ""
 
-#: im/table/ime.h:97
+#: im/table/ime.h:90
 msgid "Commit after auto select candidates"
 msgstr ""
 
-#: im/table/ime.h:101
+#: im/table/ime.h:94
 msgid "Commit buffer when deactivating input method"
 msgstr ""
 
-#: im/pinyin/pinyin.h:64
+#: im/pinyin/pinyin.h:62
 msgid "Commit current preedit"
 msgstr ""
 
-#: im/pinyin/pinyin.h:65
+#: im/pinyin/pinyin.h:63
 msgid "Commit default selection"
 msgstr ""
 
-#: im/table/ime.h:110
+#: im/table/ime.h:103
 msgid ""
 "Commit the segment that does not exist in the table. This option is useful "
 "for some latin/compose based table."
 msgstr ""
 
-#: im/pinyin/pinyin.h:77
+#: im/pinyin/pinyin.h:75
 msgid "Common Typo"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:332
-#: gui/pinyindictmanager/pinyindictmanager.cpp:364
+#: gui/pinyindictmanager/pinyindictmanager.cpp:330
+#: gui/pinyindictmanager/pinyindictmanager.cpp:362
 msgid "Confirm deletion"
 msgstr ""
 
@@ -273,13 +215,13 @@ msgstr ""
 msgid "Converter crashed."
 msgstr ""
 
-#: im/table/state.cpp:773
+#: im/table/state.cpp:699
 msgid "Could not find pinyin."
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:113
-#: gui/pinyindictmanager/pinyindictmanager.cpp:224
-#: gui/pinyindictmanager/pinyindictmanager.cpp:283
+#: gui/pinyindictmanager/pinyindictmanager.cpp:111
+#: gui/pinyindictmanager/pinyindictmanager.cpp:222
+#: gui/pinyindictmanager/pinyindictmanager.cpp:281
 msgid "Create directory failed. Please check the permission or disk space."
 msgstr ""
 
@@ -287,23 +229,19 @@ msgstr ""
 msgid "Create temporary file failed."
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:124
+#: gui/pinyindictmanager/pinyindictmanager.cpp:122
 msgid "Creating temp file failed. Please check the permission or disk space."
 msgstr ""
 
-#: im/table/engine.h:43 im/pinyin/pinyin.h:73
+#: im/pinyin/pinyin.h:71
 msgid "Custom"
-msgstr ""
-
-#: gui/customphraseeditor/customphraseeditor.cpp:163
-msgid "Custom Phrase Editor"
 msgstr ""
 
 #. i18n: file: gui/pinyindictmanager/browserdialog_webkit.ui:14
 #. i18n: ectx: property (windowTitle), widget (QDialog, BrowserDialog)
 #. i18n: file: gui/pinyindictmanager/browserdialog.ui:14
 #. i18n: ectx: property (windowTitle), widget (QDialog, BrowserDialog)
-#: rc.cpp:24 rc.cpp:30
+#: rc.cpp:3 rc.cpp:9
 #, kde-format
 msgid "Dialog"
 msgstr ""
@@ -312,44 +250,35 @@ msgstr ""
 msgid "Dianbaoma"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:139
+#: im/pinyin/pinyin.h:205
+msgid "Dictionaries"
+msgstr ""
+
+#: gui/pinyindictmanager/pinyindictmanager.cpp:137
 msgid "Dictionary already exists"
 msgstr ""
 
-#: im/table/ime.h:267
+#: im/table/ime.h:263
 msgid "Display Hint for word"
 msgstr ""
 
-#: im/table/engine.h:64
-msgid "Display Shuangpin when looking up pinyin"
-msgstr ""
-
-#: im/table/ime.h:269
+#: im/table/ime.h:265
 msgid "Display custom hint"
 msgstr ""
 
-#: im/table/engine.h:40
-msgid "Do not display"
-msgstr ""
-
-#: im/pinyin/pinyin.cpp:1180
-#, c++-format
+#: im/pinyin/pinyin.cpp:867
 msgid ""
 "Do you want to enable cloudpinyin now for better prediction? You can always "
 "toggle it later in configuration or by pressing {}."
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1175
+#: im/pinyin/pinyin.cpp:862
 msgid ""
 "Do you want to enable cloudpinyin now for better prediction? You can always "
 "toggle it later in configuration."
 msgstr ""
 
-#: gui/customphraseeditor/customphraseeditor.cpp:206
-msgid "Do you want to reload custom phrase from disk?"
-msgstr ""
-
-#: im/table/ime.h:140
+#: im/table/ime.h:138
 msgid "Don't sort word shorter than"
 msgstr ""
 
@@ -361,31 +290,31 @@ msgstr ""
 msgid "Download started."
 msgstr ""
 
-#: im/pinyin/pinyin.h:114
+#: im/pinyin/pinyin.h:111
 msgid "Enable Chaizi"
 msgstr ""
 
-#: im/pinyin/pinyin.h:116
+#: im/pinyin/pinyin.h:113
 msgid "Enable Characters in Unicode CJK Extension B"
 msgstr ""
 
-#: im/pinyin/pinyin.h:122
+#: im/pinyin/pinyin.h:116
 msgid "Enable Cloud Pinyin"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1189
+#: im/pinyin/pinyin.cpp:876
 msgid "Enable Cloudpinyin"
 msgstr ""
 
-#: im/pinyin/pinyin.h:113
+#: im/pinyin/pinyin.h:110
 msgid "Enable Emoji"
 msgstr ""
 
-#: im/table/engine.h:67 im/pinyin/pinyin.h:142
+#: im/table/engine.h:43 im/pinyin/pinyin.h:129
 msgid "Enable Prediction"
 msgstr ""
 
-#: im/pinyin/pinyin.h:112
+#: im/pinyin/pinyin.h:109
 msgid "Enable Spell"
 msgstr ""
 
@@ -393,15 +322,15 @@ msgstr ""
 msgid "Enabled Input Methods"
 msgstr ""
 
-#: im/table/ime.h:228
+#: im/table/ime.h:224
 msgid "End key"
 msgstr ""
 
-#: im/pinyin/pinyin.h:246
+#: im/pinyin/pinyin.h:234
 msgid "Enter a string from the list will make it enter quickphrase mode."
 msgstr ""
 
-#: modules/punctuation/punctuation.h:50
+#: modules/punctuation/punctuation.h:49
 msgid "Entries"
 msgstr ""
 
@@ -409,11 +338,11 @@ msgstr ""
 msgid "Erbi"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:374
+#: gui/pinyindictmanager/pinyindictmanager.cpp:372
 msgid "Error while deleting %1."
 msgstr ""
 
-#: im/table/ime.h:265
+#: im/table/ime.h:261
 msgid "Exact Match"
 msgstr ""
 
@@ -421,7 +350,7 @@ msgstr ""
 msgid "Extra Pinyin functionality"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:112
+#: gui/pinyindictmanager/pinyindictmanager.cpp:110
 msgid "Failed to create directory"
 msgstr ""
 
@@ -429,48 +358,44 @@ msgstr ""
 msgid "Failed to create request."
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:123
+#: gui/pinyindictmanager/pinyindictmanager.cpp:121
 msgid "Failed to create temp file"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:223
-#: gui/pinyindictmanager/pinyindictmanager.cpp:282
+#: gui/pinyindictmanager/pinyindictmanager.cpp:221
+#: gui/pinyindictmanager/pinyindictmanager.cpp:280
 msgid "Failed to get runtime directory"
 msgstr ""
 
-#: im/table/ime.h:24
+#: im/table/ime.h:23
 msgid "Fast"
 msgstr ""
 
-#: im/table/ime.h:38
+#: im/table/ime.h:37
 msgid "File"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:373
+#: gui/pinyindictmanager/pinyindictmanager.cpp:371
 msgid "File Operation Failed"
 msgstr ""
 
-#: gui/customphraseeditor/customphraseeditor.cpp:205
-msgid "File updated"
-msgstr ""
-
-#: im/pinyin/pinyin.h:208
+#: im/pinyin/pinyin.h:195
 msgid "Filter by stroke"
 msgstr ""
 
-#: im/table/ime.h:116
+#: im/table/ime.h:109
 msgid "First candidate as Preedit"
 msgstr ""
 
-#: im/table/ime.h:120 im/pinyin/pinyin.h:138
+#: im/table/ime.h:113 im/pinyin/pinyin.h:125
 msgid "Fix embedded preedit cursor at the beginning of the preedit"
 msgstr ""
 
-#: im/table/engine.h:53 im/pinyin/pinyin.h:153
+#: im/table/engine.h:34 im/pinyin/pinyin.h:140
 msgid "Forget word"
 msgstr ""
 
-#: im/table/ime.h:24
+#: im/table/ime.h:23
 msgid "Freq"
 msgstr ""
 
@@ -498,19 +423,19 @@ msgstr ""
 msgid "Full width character"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:92
+#: modules/punctuation/punctuation.h:88
 msgid "Full width punctuation"
 msgstr ""
 
-#: modules/punctuation/punctuation.cpp:253
+#: modules/punctuation/punctuation.cpp:232
 msgid "Full width punctuation is disabled."
 msgstr ""
 
-#: modules/punctuation/punctuation.cpp:252
+#: modules/punctuation/punctuation.cpp:231
 msgid "Full width punctuation is enabled."
 msgstr ""
 
-#: im/pinyin/pinyin.h:248
+#: im/pinyin/pinyin.h:236
 msgid "Fuzzy Pinyin Settings"
 msgstr ""
 
@@ -518,133 +443,87 @@ msgstr ""
 msgid "Half width Character"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:93
+#: modules/punctuation/punctuation.h:89
 msgid "Half width punctuation"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:30
+#: modules/punctuation/punctuation.h:29
 msgid "Half width punctuation after latin letter or number"
 msgstr ""
 
-#: im/table/ime.h:26
+#: im/table/ime.h:25
 msgid "Horizontal"
 msgstr ""
 
-#: im/table/ime.h:138
+#: im/table/ime.h:136
 msgid "Icon"
 msgstr "סמל"
 
-#: im/table/ime.h:262
+#: im/table/ime.h:258
 msgid ""
 "If the value less than 0, means this feature is disabled. If auto phrase is "
 "enabled, selecting auto phrase candidate explicitly will still add the word "
 "as a new user phrase."
 msgstr ""
 
-#: gui/customphraseeditor/customphrasemodel.cpp:39
-msgctxt "Please ensure the line width is around 80 character width"
-msgid ""
-"If you want to produce dynamic content, you may set the phrase to\n"
-"start with symbol \"#\". The phrase may contain variable name like\n"
-"$name or ${name}. For example, you can write: sj,2=#$fullhour:$minute\n"
-"to produce current 24-hour time with sj.\n"
-"Built-in functions include:\n"
-"$year Current year, e.g. 1990, 2003.\n"
-"$year_yy Current year in two-digit, e.g. 90, 03.\n"
-"$month Current month, e.g. 1, 2, 3..., 12.\n"
-"$month_mm Current month in two digit, e.g. 01, 02, ... 12.\n"
-"$day Current day of month, e.g. 1, 2, 3..., 31.\n"
-"$day_dd Current day of month in two digit, e.g. 01, 02, ... 31.\n"
-"$weekday Current weekday, e.g. 1, 2, 3, ... 7.\n"
-"$fullhour Current 24-hour, e.g. 00, 01, 02, ..., 23.\n"
-"$halfhour Current 12-hour, 01, 02, 03, ..., 12.\n"
-"$ampm Current AM or PM.\n"
-"$minute Current minute, e.g. 00, 01, ..., 59\n"
-"$second Current second, e.g. 00, 01, ..., 59\n"
-"$year_cn Current year in Chinese, e.g. 一九九零, 二零零三.\n"
-"$year_yy_cn Current year in two digit Chinese, e.g. 九零, 零三.\n"
-"$month_cn Current month in Chinese, e.g. 一月, 二月, ... 十二月.\n"
-"$day_cn Current day in Chinese, e.g. 一, 二, ... 三十一.\n"
-"$fullhour_cn Current 24-hour in Chinese, e.g. 零, 一, 二, ... 二十三.\n"
-"$halfhour_cn Current 12-hour in Chinese, e.g. 一, 二, ... 十二.\n"
-"$ampm_cn Current AM, PM in Chinese, 上午 or 下午.\n"
-"$minute_cn Current minute in Chinese, 零, 一, 二, ... 五十九.\n"
-"$second_cn Current second in Chinese, 零, 一, 二, ... 五十九.\n"
-"\n"
-"If lua is installed, the function defined in imeapi can be invoked \n"
-"with ${lua:function_name}.\n"
-msgstr ""
-
-#: im/table/ime.h:114
+#: im/table/ime.h:107
 msgid "Ignore built in punctuation"
 msgstr ""
 
-#: im/pinyin/pinyin.h:78
+#: im/pinyin/pinyin.h:76
 msgid "Inner Segment (xian -> xi'an)"
 msgstr ""
 
-#: im/pinyin/pinyin.h:80
+#: im/pinyin/pinyin.h:78
 msgid "Inner Segment for Short Pinyin (qie -> qi'e)"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:99
+#: gui/pinyindictmanager/pinyindictmanager.cpp:97
 msgid "Input Dictionary Name"
 msgstr ""
 
-#: gui/customphraseeditor/customphrasemodel.cpp:86
-msgid "Key"
-msgstr ""
-
-#: modules/punctuation/punctuation.h:39
+#: modules/punctuation/punctuation.h:38
 msgctxt "Key of the punctuation, e.g. comma"
 msgid "Key"
 msgstr ""
 
-#: im/table/ime.h:125 im/pinyin/pinyin.h:231
+#: im/table/ime.h:123 im/pinyin/pinyin.h:219
 msgid "Key to trigger quickphrase"
 msgstr ""
 
-#: im/table/ime.h:245
+#: im/table/ime.h:241
 msgid "Learn auto phrase with phrase"
 msgstr ""
 
-#: im/table/ime.h:266
+#: im/table/ime.h:262
 msgid "Learning"
 msgstr ""
 
-#: im/table/ime.h:182
+#: im/table/ime.h:178
 msgid "Length limit of selecting the only candidate"
 msgstr ""
 
-#: im/table/engine.h:58
-msgid "Look up pinyin"
+#: im/table/engine.h:39
+msgid "Lookup pinyin"
 msgstr ""
 
-#: im/table/engine.h:40 im/pinyin/pinyin.h:70
+#: im/pinyin/pinyin.h:68
 msgid "MS"
 msgstr ""
 
-#: im/pinyin/pinyin.h:220
-msgid "Manage Custom Phrase"
-msgstr ""
-
-#: im/pinyin/pinyin.h:218
-msgid "Manage Dictionaries"
-msgstr ""
-
-#: modules/punctuation/punctuation.h:40
+#: modules/punctuation/punctuation.h:39
 msgid "Mapping"
 msgstr ""
 
-#: im/table/ime.h:253
+#: im/table/ime.h:249
 msgid "Marker for auto phrase in the candidates"
 msgstr ""
 
-#: im/pinyin/pinyin.h:83
+#: im/pinyin/pinyin.h:81
 msgid "Match partial finals (e -> en, eng, ei)"
 msgstr ""
 
-#: im/pinyin/pinyin.h:87
+#: im/pinyin/pinyin.h:85
 msgid "Match partial shuangpin if input length is longer than 4"
 msgstr ""
 
@@ -652,27 +531,27 @@ msgstr ""
 msgid "Minimum Pinyin Length"
 msgstr ""
 
-#: im/table/engine.h:48
+#: im/table/engine.h:29
 msgid "Modify dictionary"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:99
+#: gui/pinyindictmanager/pinyindictmanager.cpp:97
 msgid "New Dictionary Name:"
 msgstr ""
 
-#: im/table/ime.h:60 im/pinyin/pinyin.h:177
+#: im/table/ime.h:59 im/pinyin/pinyin.h:164
 msgid "Next Candidate"
 msgstr ""
 
-#: im/pinyin/pinyin.h:165
+#: im/pinyin/pinyin.h:152
 msgid "Next Page"
 msgstr ""
 
-#: im/table/ime.h:48
+#: im/table/ime.h:47
 msgid "Next page"
 msgstr ""
 
-#: im/table/ime.h:24 im/pinyin/pinyin.cpp:1186
+#: im/table/ime.h:23 im/pinyin/pinyin.cpp:873
 msgid "No"
 msgstr "לא"
 
@@ -680,15 +559,15 @@ msgstr "לא"
 msgid "No browsing outside pinyin.sogou.com, now redirect to home page."
 msgstr ""
 
-#: im/table/engine.cpp:209
+#: im/table/engine.cpp:132
 msgid "Not available"
 msgstr ""
 
-#: im/table/ime.h:25
+#: im/table/ime.h:24
 msgid "Not set"
 msgstr ""
 
-#: im/pinyin/pinyin.h:212
+#: im/pinyin/pinyin.h:199
 msgid "Number of Sentences"
 msgstr ""
 
@@ -700,110 +579,87 @@ msgstr ""
 msgid "OpenCC profile for Traditional to Simplified"
 msgstr ""
 
-#: gui/customphraseeditor/customphrasemodel.cpp:90
-msgid "Order"
-msgstr ""
-
-#: im/table/ime.h:144
+#: im/table/ime.h:140
 msgid "Order policy"
 msgstr ""
 
-#: im/table/ime.h:163
+#: im/table/ime.h:159
 msgid ""
 "Order the candidate based on the word you already typed. You may want to "
 "disable this option if you want the candidate order to be stable regardless "
 "of the history."
 msgstr ""
 
-#. i18n: file: gui/customphraseeditor/editordialog.ui:55
-#. i18n: ectx: property (text), widget (QLabel, label)
-#: rc.cpp:6
-#, kde-format
-msgid "Order:"
-msgstr ""
-
-#: im/table/ime.h:90 im/pinyin/pinyin.h:110
+#: im/table/ime.h:83 im/pinyin/pinyin.h:107
 msgid "Page size"
 msgstr ""
 
-#: gui/customphraseeditor/customphrasemodel.cpp:88
-msgid "Phrase"
-msgstr ""
-
-#: im/pinyin/pinyin.cpp:1189 im/pinyin/pinyin.cpp:1454
+#: im/pinyin/pinyin.cpp:876 im/pinyin/pinyin.cpp:1075
 #: im/pinyin/pinyin-addon.conf.in.in:3 im/pinyin/pinyin.conf.in:3
 msgid "Pinyin"
 msgstr "פיניין:"
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:92
+#: gui/pinyindictmanager/pinyindictmanager.cpp:90
 msgid "Pinyin dictionary manager"
 msgstr ""
 
-#: im/table/engine.h:42 im/pinyin/pinyin.h:72
+#: im/pinyin/pinyin.h:70
 msgid "PinyinJiajia"
 msgstr ""
 
-#: im/table/state.cpp:722
+#: im/table/state.cpp:685
 msgid "Please use this functionality after typing some text."
 msgstr ""
 
-#: im/table/engine.cpp:77 im/table/engine.cpp:85 im/pinyin/pinyin.cpp:1015
-#: im/pinyin/pinyin.cpp:1025
-msgid "Prediction Disabled"
+#: im/table/engine.cpp:73 im/pinyin/pinyin.cpp:738
+msgid "Prediction"
 msgstr ""
 
-#: im/table/engine.cpp:76 im/table/engine.cpp:84 im/pinyin/pinyin.cpp:1014
-#: im/pinyin/pinyin.cpp:1024
-msgid "Prediction Enabled"
-msgstr ""
-
-#: im/table/engine.h:70 im/pinyin/pinyin.h:145
+#: im/table/engine.h:45 im/pinyin/pinyin.h:132
 msgid "Prediction Size"
 msgstr ""
 
-#: im/table/ime.h:174
+#: im/table/ime.h:170
 msgid "Prefix key to trigger Pinyin"
 msgstr ""
 
-#: im/table/state.cpp:792
+#: im/table/state.cpp:718
 msgid "Press Backspace to forget."
 msgstr ""
 
-#: im/table/state.cpp:795
+#: im/table/state.cpp:721
 msgid "Press Delete to remove."
 msgstr ""
 
-#: im/table/state.cpp:789
+#: im/table/state.cpp:715
 msgid "Press space or enter to insert."
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1920
-#, c++-format
+#: im/pinyin/pinyin.cpp:1501
 msgid "Press {} for {}"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1917
-#, c++-format
+#: im/pinyin/pinyin.cpp:1498
 msgid "Press {} for {} and Return for {}"
 msgstr ""
 
-#: im/table/ime.h:54
+#: im/table/ime.h:53
 msgid "Prev Candidate"
 msgstr ""
 
-#: im/table/ime.h:42
+#: im/table/ime.h:41
 msgid "Prev page"
 msgstr ""
 
-#: im/pinyin/pinyin.h:171
+#: im/pinyin/pinyin.h:158
 msgid "Previous Candidate"
 msgstr ""
 
-#: im/pinyin/pinyin.h:159
+#: im/pinyin/pinyin.h:146
 msgid "Previous Page"
 msgstr ""
 
-#: im/pinyin/pinyin.h:216
+#: im/pinyin/pinyin.h:203
 msgid "Prompt long word length when input length over (0 for disable)"
 msgstr ""
 
@@ -811,96 +667,88 @@ msgstr ""
 msgid "Proxy"
 msgstr ""
 
-#: im/pinyin/pinyin.h:223 modules/punctuation/punctuation.cpp:249
-#: modules/punctuation/punctuation.cpp:251
+#: im/pinyin/pinyin.h:208 modules/punctuation/punctuation.cpp:228
+#: modules/punctuation/punctuation.cpp:230
 #: modules/punctuation/punctuation.conf.in.in:3
 msgid "Punctuation"
 msgstr ""
 
-#: im/pinyin/pinyin.h:236
+#: im/pinyin/pinyin.h:224
 msgid "Quick Phrase"
 msgstr ""
 
-#: im/table/ime.h:218
+#: im/table/ime.h:214
 msgid "Regular expression for auto select when no match is found"
 msgstr ""
 
-#: im/table/ime.h:194
+#: im/table/ime.h:190
 msgid "Regular expression for selecting the only candidate"
 msgstr ""
 
 #. i18n: file: gui/pinyindictmanager/pinyindictmanager.ui:44
 #. i18n: ectx: property (text), widget (QPushButton, removeAllButton_)
-#: rc.cpp:42
+#: rc.cpp:21
 #, kde-format
 msgid "Remove &All"
 msgstr ""
 
-#: im/table/ime.h:257
+#: im/table/ime.h:253
 msgid "Save auto phrase after being typed for ... times"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:200
+#: gui/pinyindictmanager/pinyindictmanager.cpp:198
 msgid "Scel file (*.scel)"
 msgstr ""
 
-#: im/pinyin/pinyin.h:183
+#: im/pinyin/pinyin.h:170
 msgid "Select 2nd Candidate"
 msgstr ""
 
-#: im/pinyin/pinyin.h:190
+#: im/pinyin/pinyin.h:177
 msgid "Select 3rd Candidate"
 msgstr ""
 
-#: im/table/ime.h:66
-msgid "Select Current Candidate"
-msgstr ""
-
-#: gui/pinyindictmanager/pinyindictmanager.cpp:159
+#: gui/pinyindictmanager/pinyindictmanager.cpp:157
 msgid "Select Dictionary File"
 msgstr ""
 
-#: im/table/ime.h:72
+#: im/table/ime.h:65
 msgid "Select Second Candidate"
 msgstr ""
 
-#: im/table/ime.h:79
+#: im/table/ime.h:72
 msgid "Select Third Candidate"
 msgstr ""
 
-#: im/table/state.cpp:1459
+#: im/table/state.cpp:1257
 msgid "Select candidate to be removed from history:"
 msgstr ""
 
-#: gui/pinyindictmanager/pinyindictmanager.cpp:200
+#: gui/pinyindictmanager/pinyindictmanager.cpp:198
 msgid "Select scel file"
 msgstr ""
 
-#: im/table/ime.h:86
+#: im/table/ime.h:79
 msgid "Selection"
 msgstr ""
 
-#: im/table/ime.h:271
+#: im/table/ime.h:267
 msgid "Separator text between hint and candidate"
 msgstr ""
 
 #: im/pinyin/pinyin.h:128
-msgid "Show animation when Cloud Pinyin is loading"
-msgstr ""
-
-#: im/pinyin/pinyin.h:141
 msgid "Show complete pinyin in preedit"
 msgstr ""
 
-#: im/pinyin/pinyin.h:109
+#: im/pinyin/pinyin.h:106
 msgid "Show current shuangpin mode"
 msgstr ""
 
-#: im/table/engine.cpp:78 im/pinyin/pinyin.cpp:1016
+#: im/table/engine.cpp:74 im/pinyin/pinyin.cpp:739
 msgid "Show prediction words"
 msgstr ""
 
-#: im/pinyin/pinyin.h:134
+#: im/pinyin/pinyin.h:121
 msgid "Show preedit within application"
 msgstr ""
 
@@ -908,7 +756,7 @@ msgstr ""
 msgid "Shuangpin"
 msgstr ""
 
-#: im/pinyin/pinyin.h:106
+#: im/pinyin/pinyin.h:103
 msgid "Shuangpin Profile"
 msgstr ""
 
@@ -916,32 +764,28 @@ msgstr ""
 msgid "Simplified Chinese"
 msgstr "סינית מפושטת"
 
-#: modules/chttrans/chttrans.cpp:76
+#: modules/chttrans/chttrans.cpp:77
 msgid "Simplified Chinese is enabled."
 msgstr ""
 
-#: im/pinyin/pinyin.h:226 modules/chttrans/chttrans.cpp:70
+#: im/pinyin/pinyin.h:211 modules/chttrans/chttrans.cpp:71
 #: modules/chttrans/chttrans.conf.in.in:3
 msgid "Simplified and Traditional Chinese Translation"
 msgstr ""
 
-#: im/table/ime.h:142
-msgid "Sort candidate by code length"
-msgstr ""
-
-#: im/table/ime.h:158
+#: im/table/ime.h:154
 msgid "Sort candidates based on current context"
 msgstr ""
 
-#: im/pinyin/pinyin.h:241
+#: im/pinyin/pinyin.h:229
 msgid "Strings to trigger quick phrase"
 msgstr ""
 
-#: modules/chttrans/chttrans.cpp:74
+#: modules/chttrans/chttrans.cpp:75
 msgid "Switch to Simplified Chinese"
 msgstr ""
 
-#: modules/chttrans/chttrans.cpp:73
+#: modules/chttrans/chttrans.cpp:74
 msgid "Switch to Traditional Chinese"
 msgstr ""
 
@@ -949,7 +793,7 @@ msgstr ""
 msgid "Table"
 msgstr ""
 
-#: im/table/ime.h:93
+#: im/table/ime.h:86
 msgid "Table Global Options"
 msgstr ""
 
@@ -957,22 +801,8 @@ msgstr ""
 msgid "Temporary file created."
 msgstr ""
 
-#: im/table/ime.h:131
+#: im/table/ime.h:129
 msgid "Text to trigger quickphrase"
-msgstr ""
-
-#: gui/customphraseeditor/customphrasemodel.cpp:26
-msgctxt "Please ensure the line width is around 80 character width"
-msgid ""
-"The line should be in format key,order=value\n"
-"If value is multiline, you may either write is as\n"
-"key,order=\n"
-"line1\n"
-"line2\n"
-"...\n"
-"lineN\n"
-"Or, write it as key,order=\"line1\\nline2...\\nlineN\"\n"
-"The comment line is started with # or ;.\n"
 msgstr ""
 
 #: modules/cloudpinyin/cloudpinyin.h:42
@@ -986,7 +816,7 @@ msgid "Toggle Key"
 msgstr ""
 
 #: modules/fullwidth/fullwidth.h:19 modules/chttrans/chttrans.h:31
-#: modules/punctuation/punctuation.h:27
+#: modules/punctuation/punctuation.h:26
 msgid "Toggle key"
 msgstr ""
 
@@ -994,7 +824,7 @@ msgstr ""
 msgid "Traditional Chinese"
 msgstr "סינית מסורתית"
 
-#: modules/chttrans/chttrans.cpp:75
+#: modules/chttrans/chttrans.cpp:76
 msgid "Traditional Chinese is enabled."
 msgstr ""
 
@@ -1002,43 +832,39 @@ msgstr ""
 msgid "Translate engine"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:33
+#: modules/punctuation/punctuation.h:32
 msgid "Type paired punctuations together (e.g. Quote)"
 msgstr ""
 
-#: gui/customphraseeditor/customphraseeditor.cpp:126
-msgid "Usage"
-msgstr ""
-
-#: im/pinyin/pinyin.h:203
+#: im/pinyin/pinyin.h:190
 msgid "Use BackSpace to cancel the selection"
 msgstr ""
 
-#: im/pinyin/pinyin.h:195
+#: im/pinyin/pinyin.h:182
 msgid "Use Keypad as Selection key"
 msgstr ""
 
-#: im/table/state.cpp:728
+#: im/table/state.cpp:691
 msgid "Use Left and Right to select character: "
 msgstr ""
 
-#: im/table/state.cpp:776
+#: im/table/state.cpp:702
 msgid "Use Left and Right to select text. "
 msgstr ""
 
-#: im/pinyin/pinyin.h:235
+#: im/pinyin/pinyin.h:223
 msgid "Use V to trigger quickphrase"
 msgstr ""
 
-#: im/table/ime.h:112
+#: im/table/ime.h:105
 msgid "Use full width"
 msgstr ""
 
-#: im/table/ime.h:148
+#: im/table/ime.h:144
 msgid "Use system language model"
 msgstr ""
 
-#: im/table/ime.h:26
+#: im/table/ime.h:25
 msgid "Vertical"
 msgstr ""
 
@@ -1046,32 +872,32 @@ msgstr ""
 msgid "Wanfeng"
 msgstr ""
 
-#: im/table/ime.h:135
+#: im/table/ime.h:133
 msgid ""
 "When a new character is typed, if it matches any character in this string, "
 "all the existing text will be put into quickphrase buffer."
 msgstr ""
 
-#: im/table/ime.h:152
+#: im/table/ime.h:148
 msgid ""
 "When available, system language model will be loaded for given language and "
 "provide ability to give better context based order."
 msgstr ""
 
-#: im/table/ime.h:187
+#: im/table/ime.h:183
 msgid ""
 "When current input length is greater than or equal to the limit and there is "
 "only one candidate available, automatically select this candidate. -1 Means "
 "the maximum code length of the table. 0 means this behavior is disabled."
 msgstr ""
 
-#: im/table/ime.h:198
+#: im/table/ime.h:194
 msgid ""
 "When current input matches the regular expression and there is only one "
 "candidate available, automatically select this candidate."
 msgstr ""
 
-#: im/table/ime.h:209
+#: im/table/ime.h:205
 msgid ""
 "When typing a new character, if the current input length is greater than or "
 "equal to the limit, and the existing segment with the new character does not "
@@ -1080,7 +906,7 @@ msgid ""
 "means this behavior is disabled."
 msgstr ""
 
-#: im/table/ime.h:223
+#: im/table/ime.h:219
 msgid ""
 "When typing a new character, if the current input matches the regular "
 "expression and the existing segment with the new character does not have any "
@@ -1088,12 +914,12 @@ msgid ""
 "the new character."
 msgstr ""
 
-#: im/table/ime.h:249
+#: im/table/ime.h:245
 msgid ""
 "Whether to learn new phrase from other phrases or just single characters."
 msgstr ""
 
-#: im/table/ime.h:169
+#: im/table/ime.h:165
 msgid "Wildcard matching Key"
 msgstr ""
 
@@ -1109,31 +935,31 @@ msgstr ""
 msgid "Wubi Pinyin"
 msgstr ""
 
-#: im/table/engine.h:43 im/pinyin/pinyin.h:73
+#: im/pinyin/pinyin.h:71
 msgid "Xiaohe"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1185
+#: im/pinyin/pinyin.cpp:872
 msgid "Yes"
 msgstr ""
 
-#: im/table/engine.h:42 im/pinyin/pinyin.h:72
+#: im/pinyin/pinyin.h:70
 msgid "Zhongwenzhixing"
 msgstr ""
 
-#: im/table/engine.h:41 im/pinyin/pinyin.h:71
+#: im/pinyin/pinyin.h:69
 msgid "Ziguang"
 msgstr ""
 
-#: im/table/engine.h:40 im/pinyin/pinyin.h:70 im/table/zrm.conf.in.in:3
+#: im/pinyin/pinyin.h:68 im/table/zrm.conf.in.in:3
 msgid "Ziranma"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1691
+#: im/pinyin/pinyin.cpp:1298
 msgid "[Select the word to remove from history]"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1639
+#: im/pinyin/pinyin.cpp:1246
 msgid "[Stroke Filtering]"
 msgstr ""
 
@@ -1141,90 +967,75 @@ msgstr ""
 #. i18n: ectx: property (url), widget (QWebView, webView_)
 #. i18n: file: gui/pinyindictmanager/browserdialog.ui:21
 #. i18n: ectx: property (url), widget (QWebEngineView, webView_)
-#: rc.cpp:27 rc.cpp:33
+#: rc.cpp:6 rc.cpp:12
 #, kde-format
 msgid "about:blank"
 msgstr "about:blank"
 
-#: im/pinyin/pinyin.h:89
+#: im/pinyin/pinyin.h:87
 msgid "an <-> ang"
 msgstr ""
 
-#: im/pinyin/pinyin.h:95
+#: im/pinyin/pinyin.h:93
 msgid "c <-> ch"
 msgstr ""
 
-#: im/pinyin/pinyin.h:90
+#: im/pinyin/pinyin.h:88
 msgid "en <-> eng"
 msgstr ""
 
-#: im/pinyin/pinyin.h:96
+#: im/pinyin/pinyin.h:94
 msgid "f <-> h"
 msgstr ""
 
-#: im/pinyin/pinyin.h:91
+#: im/pinyin/pinyin.h:89
 msgid "ian <-> iang"
 msgstr ""
 
-#: im/pinyin/pinyin.h:92
+#: im/pinyin/pinyin.h:90
 msgid "in <-> ing"
 msgstr ""
 
-#: im/pinyin/pinyin.h:97
+#: im/pinyin/pinyin.h:95
 msgid "l <-> n"
 msgstr ""
 
-#: im/pinyin/pinyin.h:98
+#: im/pinyin/pinyin.h:96
 msgid "s <-> sh"
 msgstr ""
 
-#: im/pinyin/pinyin.h:93
+#: im/pinyin/pinyin.h:91
 msgid "u <-> ou"
 msgstr ""
 
-#: im/pinyin/pinyin.h:88
+#: im/pinyin/pinyin.h:86
 msgid "u <-> v"
 msgstr ""
 
-#: im/pinyin/pinyin.h:94
+#: im/pinyin/pinyin.h:92
 msgid "uan <-> uang"
 msgstr ""
 
-#: im/pinyin/pinyin.h:76
+#: im/pinyin/pinyin.h:74
 msgid "ue -> ve"
 msgstr ""
 
-#: im/pinyin/pinyin.h:99
+#: im/pinyin/pinyin.h:97
 msgid "z <-> zh"
 msgstr ""
 
-#: im/table/state.cpp:117 im/pinyin/pinyin.cpp:223
-#, c++-format
-msgid "{0} (Half)"
-msgstr ""
-
-#: im/pinyin/pinyin.cpp:182 modules/pinyinhelper/pinyinhelper.cpp:80
-#, c++-format
+#: im/pinyin/pinyin.cpp:124 modules/pinyinhelper/pinyinhelper.cpp:80
 msgid "{0} ({1})"
 msgstr ""
 
-#: im/table/state.cpp:767
-#, c++-format
-msgctxt "Pinyin & Shuangpin"
-msgid "{0} ({1})"
-msgstr ""
-
-#: im/table/state.cpp:810
-#, c++-format
+#: im/table/state.cpp:736
 msgid "{0} is not in table."
 msgstr ""
 
-#: im/table/state.cpp:799
-#, c++-format
+#: im/table/state.cpp:725
 msgid "{0}: No corresponding code."
 msgstr ""
 
-#: im/table/state.cpp:783 im/table/state.cpp:807
-#, c++-format
+#: im/table/state.cpp:709 im/table/state.cpp:733
 msgid "{0}: {1}"
 msgstr ""

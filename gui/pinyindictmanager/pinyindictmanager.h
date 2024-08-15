@@ -34,7 +34,6 @@ private Q_SLOTS:
     void removeAllDict();
     void clearUserDict();
     void clearAllDict();
-    void openUserDirectory();
 
 private:
     QString confirmImportFileName(const QString &defaultName);

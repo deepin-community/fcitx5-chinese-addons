@@ -6,7 +6,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@
 
 override_dh_auto_configure:
-ifeq (,$(filter $(DEB_HOST_ARCH), amd64 arm64 armhf i386 mips64el))
+ifeq (,$(filter $(DEB_HOST_ARCH), amd64 arm64 armhf i386 mipsel mips64el))
 	dh_auto_configure -- -DENABLE_BROWSER=OFF
 else
 	dh_auto_configure -- -DUSE_WEBKIT=OFF

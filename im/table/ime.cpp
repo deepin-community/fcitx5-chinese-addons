@@ -64,7 +64,6 @@ void populateOptions(libime::TableBasedDictionary *dict,
     options.setAutoRuleSet(std::unordered_set<std::string>(
         root.config->autoRuleSet->begin(), root.config->autoRuleSet->end()));
     options.setLanguageCode(*root.im->languageCode);
-    options.setSortByCodeLength(*root.config->sortByCodeLength);
 
     dict->setTableOptions(options);
 }
@@ -257,16 +256,4 @@ void TableIME::saveDict(const std::string &name) {
             }
         });
 }
-
-void TableIME::reloadAllDict() {
-    std::unordered_set<std::string> names;
-    for (const auto &pair : tables_) {
-        names.insert(pair.first);
-    }
-    tables_.clear();
-    for (const auto &name : names) {
-        requestDict(name);
-    }
-}
-
 } // namespace fcitx

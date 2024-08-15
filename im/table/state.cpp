@@ -8,19 +8,13 @@
 #include "pinyinhelper_public.h"
 #include "punctuation_public.h"
 #include "quickphrase_public.h"
-#include <algorithm>
 #include <fcitx-utils/event.h>
-#include <fcitx-utils/keysym.h>
-#include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/utf8.h>
-#include <fcitx/event.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputpanel.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <libime/core/historybigram.h>
 #include <libime/pinyin/pinyinencoder.h>
-#include <libime/pinyin/shuangpinprofile.h>
 
 namespace fcitx {
 
@@ -106,34 +100,6 @@ public:
     TableEngine *engine_;
     std::string word_;
 };
-
-class TablePunctuationCandidateWord : public CandidateWord {
-public:
-    TablePunctuationCandidateWord(TableState *state, std::string word,
-                                  bool isHalf)
-        : CandidateWord(), state_(state), word_(std::move(word)) {
-        Text text;
-        if (isHalf) {
-            text.append(fmt::format(_("{0} (Half)"), word_));
-        } else {
-            text.append(word_);
-        }
-        setText(text);
-    }
-
-    void select(InputContext *inputContext) const override {
-        state_->commitBuffer(true);
-        inputContext->commitString(word_);
-        state_->reset();
-    }
-
-    const std::string &word() const { return word_; }
-
-private:
-    TableState *state_;
-    std::string word_;
-};
-
 } // namespace
 
 TableContext *TableState::updateContext(const InputMethodEntry *entry) {
@@ -256,8 +222,6 @@ void TableState::reset(const InputMethodEntry *entry) {
 
     keyReleased_ = -1;
     keyReleasedIndex_ = -2;
-    // Since we also to compose, just reset compose all together
-    engine_->instance()->resetCompose(ic_);
 }
 
 class TablePredictCandidateWord : public CandidateWord {
@@ -357,11 +321,8 @@ bool TableState::autoSelectCandidate() {
     return false;
 }
 
-bool TableState::handleCandidateList(const TableConfig &config,
-                                     KeyEvent &event) {
-    if (event.isVirtual()) {
-        return false;
-    }
+bool TableState::handleCandidateList(const TableConfig &config, KeyEvent &event,
+                                     bool &needUpdate) {
     auto *inputContext = event.inputContext();
     // check if we can select candidate.
     auto candidateList = inputContext->inputPanel().candidateList();
@@ -423,6 +384,13 @@ bool TableState::handleCandidateList(const TableConfig &config,
         }
     }
 
+    // Non candidate key for predict candidate should clear it.
+    if (dynamic_cast<const TablePredictCandidateWord *>(
+            &candidateList->candidate(0))) {
+        inputContext->inputPanel().setCandidateList(nullptr);
+        needUpdate = true;
+    }
+
     return false;
 }
 
@@ -453,12 +421,11 @@ bool TableState::handlePinyinMode(KeyEvent &event) {
     } else if (mode_ != TableMode::Pinyin) {
         return false;
     } else {
+        event.filterAndAccept();
         if (event.key().isLAZ() || event.key().check(FcitxKey_apostrophe)) {
-            event.filterAndAccept();
             pinyinModeBuffer_.type(Key::keySymToUTF8(event.key().sym()));
             needUpdate = true;
         } else if (event.key().check(FcitxKey_BackSpace)) {
-            event.filterAndAccept();
             if (!pinyinModeBuffer_.empty()) {
                 pinyinModeBuffer_.backspace();
                 needUpdate = true;
@@ -466,8 +433,7 @@ bool TableState::handlePinyinMode(KeyEvent &event) {
                 reset();
                 return true;
             }
-        } else if (event.key().checkKeyList(*config.defaultCandidate)) {
-            event.filterAndAccept();
+        } else if (event.key().check(FcitxKey_space)) {
             if (autoSelectCandidate()) {
                 return true;
             }
@@ -477,16 +443,13 @@ bool TableState::handlePinyinMode(KeyEvent &event) {
                 }
                 reset();
             }
-            return true;
         } else if (event.key().check(FcitxKey_Return) ||
                    event.key().check(FcitxKey_KP_Enter)) {
-            event.filterAndAccept();
             auto commit = pinyinModePrefix_ + pinyinModeBuffer_.userInput();
             if (!commit.empty()) {
                 ic_->commitString(commit);
             }
             reset();
-            return true;
         }
     }
     if (!needUpdate) {
@@ -729,46 +692,9 @@ bool TableState::handleLookupPinyinOrModifyDictionaryMode(KeyEvent &event) {
                 auxUp.append(utf8::UCS4ToUTF8(chr));
                 inputPanel.setAuxUp(auxUp);
                 auto result =
-                    engine_->pinyinhelper()->call<IPinyinHelper::fullLookup>(
-                        chr);
+                    engine_->pinyinhelper()->call<IPinyinHelper::lookup>(chr);
                 if (!result.empty()) {
-                    std::string text;
-                    bool first = true;
-                    std::map<std::string, std::vector<std::string>> resultMap;
-                    for (const auto &[toned, fullPinyin, _] : result) {
-                        resultMap[fullPinyin].push_back(toned);
-                    }
-
-                    for (const auto &[fullPinyin, tones] : resultMap) {
-                        if (first) {
-                            first = false;
-                        } else {
-                            text.append(C_("Pinyin lookup delimeter", ", "));
-                        }
-
-                        std::vector<std::string_view> sp;
-                        if (auto *reverseShuangPinTable =
-                                engine_->reverseShuangPinTable()) {
-                            const auto normalizedFullPinyin =
-                                stringutils::replaceAll(fullPinyin, "ü", "v");
-                            auto [iter, end] =
-                                reverseShuangPinTable->equal_range(
-                                    normalizedFullPinyin);
-                            for (; iter != end; ++iter) {
-                                sp.push_back(iter->second);
-                            }
-                        }
-
-                        const auto allTones = stringutils::join(tones, " ");
-                        if (sp.empty()) {
-                            text.append(allTones);
-                        } else {
-                            text.append(fmt::format(
-                                C_("Pinyin & Shuangpin", "{0} ({1})"), allTones,
-                                stringutils::join(sp, " ")));
-                        }
-                    }
-                    inputPanel.setAuxDown(Text(text));
+                    inputPanel.setAuxDown(Text(stringutils::join(result, " ")));
                 } else {
                     inputPanel.setAuxDown(Text(_("Could not find pinyin.")));
                 }
@@ -862,44 +788,10 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
         return;
     }
 
-    if (handlePuncCandidate(config, event)) {
-        return;
-    }
-
-    if ((mode_ == TableMode::Normal || mode_ == TableMode::Pinyin) &&
-        !event.key().hasModifier()) {
-        auto compose = engine_->instance()->processComposeString(
-            inputContext, event.key().sym());
-        if (!compose) {
-            // invalid compose or in the middle of compose.
-            event.filterAndAccept();
-            return;
-        }
-        // Handle the key just like punc select.
-        if (!compose->empty()) {
-            // if current key will produce some string, select the candidate.
-            if (!autoSelectCandidate()) {
-                commitBuffer(true);
-            }
-            inputContext->commitString(*compose);
-            reset();
-            event.filterAndAccept();
-            return;
-        }
-    }
-
     lastIsPunc_ = false;
 
-    if (handleCandidateList(config, event)) {
+    if (handleCandidateList(config, event, needUpdate)) {
         return;
-    }
-
-    // Non candidate key for predict candidate should clear it.
-    if (inputContext->inputPanel().candidateList() &&
-        dynamic_cast<const TablePredictCandidateWord *>(
-            &inputContext->inputPanel().candidateList()->candidate(0))) {
-        inputContext->inputPanel().setCandidateList(nullptr);
-        needUpdate = true;
     }
 
     // We have special handling of escape here.
@@ -947,138 +839,124 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
         event.filterAndAccept();
         return;
     }
-    if (mode_ == TableMode::Normal) {
-        if (!event.key().hasModifier() && chr && context->isValidInput(chr) &&
-            (!event.key().isKeyPad() || *config.keypadAsInput)) {
-            auto candidateList = ic_->inputPanel().candidateList();
-            auto autoSelectHint = 0;
-            if (candidateList && candidateList->size()) {
-                int idx = candidateList->cursorIndex();
-                if (idx >= 0) {
-                    auto cand = dynamic_cast<const TableCandidateWord *>(
-                        &candidateList->candidate(idx));
-                    if (cand) {
-                        autoSelectHint = cand->idx_;
-                    }
+    if (!event.key().hasModifier() && chr && context->isValidInput(chr)) {
+        auto candidateList = ic_->inputPanel().candidateList();
+        auto autoSelectHint = 0;
+        if (candidateList && candidateList->size()) {
+            int idx = candidateList->cursorIndex();
+            if (idx >= 0) {
+                auto cand = dynamic_cast<const TableCandidateWord *>(
+                    &candidateList->candidate(idx));
+                if (cand) {
+                    autoSelectHint = cand->idx_;
                 }
             }
-            context->setAutoSelectIndex(autoSelectHint);
+        }
+        context->setAutoSelectIndex(autoSelectHint);
+        {
+            CommitAfterSelectWrapper commitAfterSelectRAII(this);
+            context->type(str);
+        }
+        if (context->candidates().empty() &&
+            ((*config.commitAfterSelect && context->currentCode() == str) ||
+             (!*config.commitAfterSelect && context->userInput() == str))) {
+            // This means it is not a valid start, make it go through the punc.
+            context->backspace();
+        } else {
+            event.filterAndAccept();
+            maybePredict = true;
+        }
+    } else if (!isContextEmpty()) {
+        if (event.key().check(FcitxKey_Return, KeyState::Shift) ||
+            event.key().check(FcitxKey_KP_Enter, KeyState::Shift)) {
+            // This key is used to type long auto select buffer.
+            if (*config.commitAfterSelect) {
+                commitBuffer(true);
+            } else {
+                inputContext->commitString(context->userInput());
+                context->clear();
+            }
+            event.filterAndAccept();
+        } else if (event.key().check(FcitxKey_Tab) ||
+                   event.key().check(FcitxKey_KP_Tab)) {
             {
                 CommitAfterSelectWrapper commitAfterSelectRAII(this);
-                context->type(str);
+                autoSelectCandidate();
             }
-            if (!context->dict().hasMatchingWords(context->currentCode()) &&
-                ((*config.commitAfterSelect && context->currentCode() == str) ||
-                 (!*config.commitAfterSelect && context->userInput() == str))) {
-                // This means it is not a valid start, make it go through the
-                // punc.
-                context->backspace();
-                // This should clear all candidates.
-                inputContext->inputPanel().reset();
-                needUpdate = true;
-            } else {
-                event.filterAndAccept();
+            event.filterAndAccept();
+            if (context->selected()) {
+                commitBuffer(false);
                 maybePredict = true;
             }
-        } else if (!isContextEmpty()) {
-            if (event.key().check(FcitxKey_Return, KeyState::Shift) ||
-                event.key().check(FcitxKey_KP_Enter, KeyState::Shift)) {
-                // This key is used to type long auto select buffer.
-                if (*config.commitAfterSelect) {
-                    commitBuffer(true);
-                } else {
-                    inputContext->commitString(context->userInput());
-                    context->clear();
-                }
-                event.filterAndAccept();
-            } else if (event.key().check(FcitxKey_Tab) ||
-                       event.key().check(FcitxKey_KP_Tab)) {
-                {
-                    CommitAfterSelectWrapper commitAfterSelectRAII(this);
-                    autoSelectCandidate();
-                }
-                event.filterAndAccept();
-                if (context->selected()) {
-                    commitBuffer(false);
-                    maybePredict = true;
-                }
-            } else if (event.key().sym() == FcitxKey_Return ||
-                       event.key().sym() == FcitxKey_KP_Enter) {
-                if (*config.commitAfterSelect) {
-                    if (!context->selected()) {
-                        event.filterAndAccept();
-                    }
-                    commitBuffer(true);
-                } else {
-                    inputContext->commitString(context->userInput());
-                    context->clear();
+        } else if (event.key().sym() == FcitxKey_Return ||
+                   event.key().sym() == FcitxKey_KP_Enter) {
+            if (*config.commitAfterSelect) {
+                if (!context->selected()) {
                     event.filterAndAccept();
                 }
-            } else if (event.key().check(FcitxKey_BackSpace) ||
-                       event.key().check(FcitxKey_BackSpace, KeyState::Ctrl)) {
-                // Commit the last segment if it is selected.
-                if (*config.commitAfterSelect && context->selected() &&
-                    (std::get<bool>(context->selectedSegment(
-                         context->selectedSize() - 1)) ||
-                     *config.commitInvalidSegment)) {
-                    commitBuffer(false);
-                    updateUI(/*keepOldCursor=*/false, /*maybePredict=*/false);
-                    return;
-                }
-                if (event.key().check(FcitxKey_BackSpace, KeyState::Ctrl)) {
-                    // For non-commitAfterSelect, remove the whole segment, or
-                    // the current code.
-                    if (!*config.commitAfterSelect && context->selected()) {
-                        auto cursor = context->cursor();
-                        context_->erase(cursor -
-                                            context->selectedSegmentLength(
-                                                context->selectedSize() - 1),
-                                        cursor);
-                    } else {
-                        auto cursor = context->cursor();
-                        context_->erase(
-                            cursor - utf8::length(context_->currentCode()),
-                            cursor);
-                    }
-                } else {
-                    context->backspace();
-                }
-                event.filterAndAccept();
-            } else if (event.key().isCursorMove() ||
-                       event.key().check(FcitxKey_Delete)) {
-                // if it gonna commit something
                 commitBuffer(true);
-                needUpdate = true;
-            } else if (!context->selected()) {
-                // key to handle when it is not empty.
-                if (event.key().checkKeyList(*config.defaultCandidate)) {
-                    if (!autoSelectCandidate()) {
-                        commitBuffer(true);
-                        needUpdate = true;
-                    }
-                    event.filterAndAccept();
-                }
+            } else {
+                inputContext->commitString(context->userInput());
+                context->clear();
+                event.filterAndAccept();
             }
-        } else if (event.key().check(FcitxKey_BackSpace) && lastIsPunc) {
-            auto puncStr =
-                engine_->punctuation()->call<IPunctuation::cancelLast>(
-                    entry.languageCode(), inputContext);
-            if (!puncStr.empty()) {
-                // forward the original key is the best choice.
-                auto ref = inputContext->watch();
-                cancelLastEvent_ =
-                    engine_->instance()->eventLoop().addTimeEvent(
-                        CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + 300, 0,
-                        [this, ref, puncStr](EventSourceTime *, uint64_t) {
-                            if (auto *inputContext = ref.get()) {
-                                inputContext->commitString(puncStr);
-                            }
-                            cancelLastEvent_.reset();
-                            return true;
-                        });
-                event.filter();
+        } else if (event.key().check(FcitxKey_BackSpace) ||
+                   event.key().check(FcitxKey_BackSpace, KeyState::Ctrl)) {
+            // Commit the last segment if it is selected.
+            if (*config.commitAfterSelect && context->selected() &&
+                (std::get<bool>(
+                     context->selectedSegment(context->selectedSize() - 1)) ||
+                 *config.commitInvalidSegment)) {
+                commitBuffer(false);
+                updateUI(/*keepOldCursor=*/false, /*maybePredict=*/false);
                 return;
             }
+            if (event.key().check(FcitxKey_BackSpace, KeyState::Ctrl)) {
+                // For non-commitAfterSelect, remove the whole segment, or the
+                // current code.
+                if (!*config.commitAfterSelect && context->selected()) {
+                    auto cursor = context->cursor();
+                    context_->erase(cursor - context->selectedSegmentLength(
+                                                 context->selectedSize() - 1),
+                                    cursor);
+                } else {
+                    auto cursor = context->cursor();
+                    context_->erase(
+                        cursor - utf8::length(context_->currentCode()), cursor);
+                }
+            } else {
+                context->backspace();
+            }
+            event.filterAndAccept();
+        } else if (event.key().isCursorMove() ||
+                   event.key().check(FcitxKey_Delete)) {
+            // if it gonna commit something
+            commitBuffer(true);
+            needUpdate = true;
+        } else if (!context->selected()) {
+            // key to handle when it is not empty.
+            if (event.key().check(FcitxKey_space)) {
+                autoSelectCandidate();
+                return event.filterAndAccept();
+            }
+        }
+    } else if (event.key().check(FcitxKey_BackSpace) && lastIsPunc) {
+        auto puncStr = engine_->punctuation()->call<IPunctuation::cancelLast>(
+            entry.languageCode(), inputContext);
+        if (!puncStr.empty()) {
+            // forward the original key is the best choice.
+            auto ref = inputContext->watch();
+            cancelLastEvent_ = engine_->instance()->eventLoop().addTimeEvent(
+                CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + 300, 0,
+                [this, ref, puncStr](EventSourceTime *, uint64_t) {
+                    if (auto *inputContext = ref.get()) {
+                        inputContext->commitString(puncStr);
+                    }
+                    cancelLastEvent_.reset();
+                    return true;
+                });
+            event.filter();
+            return;
         }
     }
 
@@ -1088,8 +966,7 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
         }
 
         // no reason to keep buffer if we move cursor.
-        if (*context->config().commitAfterSelect && isContextEmpty() &&
-            mode_ == TableMode::Normal) {
+        if (*context->config().commitAfterSelect && isContextEmpty()) {
             if (event.key().check(FcitxKey_Delete) ||
                 event.key().check(FcitxKey_BackSpace) ||
                 event.key().check(FcitxKey_Delete, KeyState::Ctrl) ||
@@ -1119,21 +996,9 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
         }
         std::string punc, puncAfter;
         if (!*context->config().ignorePunc && !event.key().isKeyPad()) {
-            auto candidates =
-                engine_->punctuation()
-                    ->call<IPunctuation::getPunctuationCandidates>(
-                        entry.languageCode(), chr);
-            if (candidates.size() == 1) {
-                std::tie(punc, puncAfter) =
-                    engine_->punctuation()
-                        ->call<IPunctuation::pushPunctuationV2>(
-                            entry.languageCode(), inputContext, chr);
-            } else if (candidates.size() > 1) {
-                updatePuncCandidate(inputContext, utf8::UCS4ToUTF8(chr),
-                                    candidates);
-                event.filterAndAccept();
-                return;
-            }
+            std::tie(punc, puncAfter) =
+                engine_->punctuation()->call<IPunctuation::pushPunctuationV2>(
+                    entry.languageCode(), inputContext, chr);
         }
         if (event.key().check(*config.quickphrase) && engine_->quickphrase()) {
             auto s = !punc.empty() ? punc + puncAfter : utf8::UCS4ToUTF8(chr);
@@ -1153,22 +1018,11 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
 
         if (!punc.empty()) {
             event.filterAndAccept();
-            auto paired = punc + puncAfter;
-            if (inputContext->capabilityFlags().test(
-                    CapabilityFlag::CommitStringWithCursor)) {
-                if (size_t length = utf8::lengthValidated(punc);
-                    length != 0 && length != utf8::INVALID_LENGTH) {
-                    inputContext->commitStringWithCursor(paired, length);
-                } else {
-                    inputContext->commitString(paired);
-                }
-            } else {
-                inputContext->commitString(paired);
-                if (size_t length = utf8::lengthValidated(puncAfter);
-                    length != 0 && length != utf8::INVALID_LENGTH) {
-                    for (size_t i = 0; i < length; i++) {
-                        inputContext->forwardKey(Key(FcitxKey_Left));
-                    }
+            inputContext->commitString(punc + puncAfter);
+            if (size_t length = utf8::lengthValidated(puncAfter);
+                length != 0 && length != utf8::INVALID_LENGTH) {
+                for (size_t i = 0; i < length; i++) {
+                    inputContext->forwardKey(Key(FcitxKey_Left));
                 }
             }
         }
@@ -1246,62 +1100,6 @@ bool TableState::handle2nd3rdCandidate(const TableConfig &config,
             idx++;
         }
     }
-    return false;
-}
-
-bool TableState::handlePuncCandidate(const TableConfig &config,
-                                     KeyEvent &event) {
-    auto *inputContext = event.inputContext();
-    if (mode_ != TableMode::Punctuation) {
-        return false;
-    }
-    auto candidateList = inputContext->inputPanel().candidateList();
-    if (!candidateList) {
-        reset();
-        return false;
-    }
-    if (event.key().check(FcitxKey_BackSpace)) {
-        event.filterAndAccept();
-        reset();
-        return true;
-    }
-
-    if (!event.isVirtual()) {
-        int idx = event.key().keyListIndex(config.selection.value());
-        if (idx >= 0) {
-            event.filterAndAccept();
-            if (idx < candidateList->size()) {
-                candidateList->candidate(idx).select(inputContext);
-            }
-            return true;
-        }
-
-        if (auto *movable = candidateList->toCursorMovable()) {
-            if (event.key().checkKeyList(*config.nextCandidate)) {
-                movable->nextCandidate();
-                updatePuncPreedit(inputContext);
-                inputContext->updateUserInterface(
-                    UserInterfaceComponent::InputPanel);
-                event.filterAndAccept();
-                return true;
-            }
-            if (event.key().checkKeyList(*config.prevCandidate)) {
-                movable->prevCandidate();
-                updatePuncPreedit(inputContext);
-                inputContext->updateUserInterface(
-                    UserInterfaceComponent::InputPanel);
-                event.filterAndAccept();
-                return true;
-            }
-        }
-    }
-
-    auto index = candidateList->cursorIndex();
-    if (index >= 0) {
-        candidateList->candidate(index).select(inputContext);
-    }
-
-    reset();
     return false;
 }
 
@@ -1466,49 +1264,4 @@ void TableState::updateUI(bool keepOldCursor, bool maybePredict) {
     ic_->updatePreedit();
     ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
 }
-
-void TableState::updatePuncCandidate(
-    InputContext *inputContext, const std::string &original,
-    const std::vector<std::string> &candidates) {
-    inputContext->inputPanel().reset();
-    auto puncCandidateList = std::make_unique<CommonCandidateList>();
-    puncCandidateList->setSelectionKey(*context_->config().selection);
-    puncCandidateList->setPageSize(*context_->config().pageSize);
-    puncCandidateList->setCursorPositionAfterPaging(
-        CursorPositionAfterPaging::ResetToFirst);
-    for (const auto &result : candidates) {
-        puncCandidateList->append<TablePunctuationCandidateWord>(
-            this, result, original == result);
-    }
-    puncCandidateList->setCursorIncludeUnselected(false);
-    puncCandidateList->setCursorKeepInSamePage(false);
-    puncCandidateList->setGlobalCursorIndex(0);
-    mode_ = TableMode::Punctuation;
-    inputContext->inputPanel().setCandidateList(std::move(puncCandidateList));
-    updatePuncPreedit(inputContext);
-    inputContext->updateUserInterface(UserInterfaceComponent::InputPanel);
-}
-
-void TableState::updatePuncPreedit(InputContext *inputContext) {
-    auto candidateList = inputContext->inputPanel().candidateList();
-
-    if (inputContext->capabilityFlags().test(CapabilityFlag::Preedit)) {
-        if (candidateList->cursorIndex() >= 0) {
-            Text preedit;
-
-            auto &candidate =
-                candidateList->candidate(candidateList->cursorIndex());
-            if (auto *puncCandidate =
-                    dynamic_cast<const TablePunctuationCandidateWord *>(
-                        &candidate)) {
-                preedit.append(puncCandidate->word());
-            }
-
-            preedit.setCursor(preedit.textLength());
-            inputContext->inputPanel().setClientPreedit(preedit);
-        }
-        inputContext->updatePreedit();
-    }
-}
-
 } // namespace fcitx
