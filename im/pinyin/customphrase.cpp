@@ -5,20 +5,32 @@
  *
  */
 #include "customphrase.h"
+#include <algorithm>
+#include <cassert>
 #include <charconv>
+#include <chrono>
+#include <cstdint>
 #include <ctime>
 #include <fcitx-utils/charutils.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/stringutils.h>
 #include <fmt/chrono.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <functional>
 #include <istream>
+#include <iterator>
+#include <libime/core/datrie.h>
 #include <limits>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
-#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace fcitx {
 
@@ -64,7 +76,7 @@ std::optional<ParseResult> parseCustomPhraseLine(std::string_view line) {
         return std::nullopt;
     }
 
-    std::string_view alpha = line.substr(0, i);
+    const std::string_view alpha = line.substr(0, i);
     if (i >= line.size() || line[i] != ',') {
         return std::nullopt;
     }
@@ -83,7 +95,7 @@ std::optional<ParseResult> parseCustomPhraseLine(std::string_view line) {
 
     int order = 0;
     if (auto result = parseInt(line.substr(orderStart, i - orderStart))) {
-        order = result.value();
+        order = *result;
     }
     // Zero is invalid value.
     if (order == 0) {
@@ -111,9 +123,9 @@ inline std::tm currentTm() {
     timePoint.tm_sec = 6;
     return timePoint;
 #else
-    std::chrono::system_clock::time_point now =
+    const std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    const std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
     return fmt::localtime(currentTime);
 #endif
 }
@@ -126,7 +138,7 @@ int currentHour() { return currentTm().tm_hour; }
 int currentMinute() { return currentTm().tm_min; }
 int currentSecond() { return currentTm().tm_sec; }
 int currentHalfHour() {
-    int hour = currentHour() % 12;
+    const int hour = currentHour() % 12;
     return (hour == 0) ? 12 : hour;
 }
 
@@ -136,7 +148,7 @@ std::string toChineseYear(std::string_view num) {
     };
     std::string result;
     result.reserve(num.size() * 3);
-    for (char c : num) {
+    for (const char c : num) {
         assert(charutils::isdigit(c));
         result += chineseDigit[c - '0'];
     }
@@ -159,8 +171,8 @@ std::string toChineseTwoDigitNumber(int num, bool leadingZero) {
     if (num == 0) {
         return std::string(chineseDigit[0]);
     }
-    int tens = num / 10;
-    int ones = num % 10;
+    const int tens = num / 10;
+    const int ones = num % 10;
     std::string prefix;
     if (tens == 0) {
         if (leadingZero) {
@@ -178,19 +190,23 @@ std::string toChineseTwoDigitNumber(int num, bool leadingZero) {
     return prefix + suffix;
 }
 
+bool CustomPhrase::isDynamic() const {
+    return stringutils::startsWith(value(), "#");
+}
+
 std::string CustomPhrase::evaluate(
     const std::function<std::string(std::string_view key)> &evaluator) const {
     assert(evaluator);
 
-    if (!stringutils::startsWith(value_, "#")) {
+    if (!isDynamic()) {
         return value_;
     }
     std::string_view content = value_;
     content = content.substr(1);
     std::string output;
     output.reserve(content.size());
-    size_t variableNameStart;
-    size_t variableNameLength;
+    size_t variableNameStart = 0;
+    size_t variableNameLength = 0;
 
     enum class State {
         Normal,
@@ -201,21 +217,8 @@ std::string CustomPhrase::evaluate(
 
     auto state = State::Normal;
 
-    for (size_t i = 0; i < content.size(); i++) {
-        char c = content[i];
-
-        if (state == State::Variable) {
-            if (charutils::islower(c) || charutils::isupper(c) ||
-                charutils::isdigit(c) || c == '_') {
-                variableNameLength += 1;
-                state = State::Variable;
-                continue;
-            } else {
-                output += evaluator(
-                    content.substr(variableNameStart, variableNameLength));
-                state = State::Normal;
-            }
-        }
+    for (size_t i = 0; i < content.size();) {
+        const char c = content[i];
 
         switch (state) {
         case State::Normal:
@@ -224,6 +227,7 @@ std::string CustomPhrase::evaluate(
             } else {
                 output += c;
             }
+            i += 1;
             break;
 
         case State::VariableStart:
@@ -239,7 +243,12 @@ std::string CustomPhrase::evaluate(
                 variableNameStart = i;
                 variableNameLength = 1;
                 state = State::Variable;
+            } else {
+                output += '$';
+                output += c;
+                state = State::Normal;
             }
+            i += 1;
             break;
 
         case State::BracedVariable:
@@ -251,15 +260,38 @@ std::string CustomPhrase::evaluate(
                 variableNameLength += 1;
                 state = State::BracedVariable;
             }
+            i += 1;
             break;
 
         case State::Variable:
+            if (charutils::islower(c) || charutils::isupper(c) ||
+                charutils::isdigit(c) || c == '_') {
+                variableNameLength += 1;
+                state = State::Variable;
+                i += 1;
+            } else {
+                output += evaluator(
+                    content.substr(variableNameStart, variableNameLength));
+                state = State::Normal;
+            }
             break;
         }
     }
-    if (state == State::Variable) {
+
+    switch (state) {
+    case State::Normal:
+        break;
+    case State::VariableStart:
+        output += '$';
+        break;
+    case State::BracedVariable:
+        output += "${";
+        output += content.substr(variableNameStart, variableNameLength);
+        break;
+    case State::Variable:
         output +=
             evaluator(content.substr(variableNameStart, variableNameLength));
+        break;
     }
 
     return output;
@@ -332,7 +364,7 @@ std::string CustomPhrase::builtinEvaluator(std::string_view key) {
     return "";
 }
 
-CustomPhraseDict::CustomPhraseDict() {}
+CustomPhraseDict::CustomPhraseDict() = default;
 
 void CustomPhraseDict::load(std::istream &in, bool loadDisabled) {
     clear();
@@ -369,7 +401,7 @@ void CustomPhraseDict::load(std::istream &in, bool loadDisabled) {
             if (value.size() >= 2 && stringutils::startsWith(value, '"') &&
                 stringutils::endsWith(value, '"')) {
                 if (auto unescape = stringutils::unescapeForValue(value)) {
-                    value = unescape.value();
+                    value = *unescape;
                 }
             }
 
@@ -380,7 +412,7 @@ void CustomPhraseDict::load(std::istream &in, bool loadDisabled) {
                 continue;
             }
             auto index = index_.exactMatchSearch(key);
-            if (index_.isNoValue(index)) {
+            if (TrieType::isNoValue(index)) {
                 if (data_.size() >= std::numeric_limits<int32_t>::max()) {
                     break;
                 }
@@ -408,25 +440,60 @@ void CustomPhraseDict::load(std::istream &in, bool loadDisabled) {
 const std::vector<CustomPhrase> *
 CustomPhraseDict::lookup(std::string_view key) const {
     auto index = index_.exactMatchSearch(key);
-    if (index_.isNoValue(index)) {
+    if (TrieType::isNoValue(index)) {
         return nullptr;
     }
 
     return &data_[index];
 }
 
-void CustomPhraseDict::addPhrase(std::string_view key, std::string_view value,
-                                 int order) {
+std::vector<CustomPhrase> *
+CustomPhraseDict::getOrCreateEntry(std::string_view key) {
+
     auto index = index_.exactMatchSearch(key);
-    if (index_.isNoValue(index)) {
+    if (TrieType::isNoValue(index)) {
         if (data_.size() >= std::numeric_limits<int32_t>::max()) {
-            return;
+            return nullptr;
         }
         index = data_.size();
         index_.set(key, index);
         data_.push_back({});
     }
-    data_[index].push_back(CustomPhrase(order, std::string(value)));
+    return &data_[index];
+}
+
+void CustomPhraseDict::addPhrase(std::string_view key, std::string_view value,
+                                 int order) {
+    if (order == 0) {
+        return;
+    }
+    if (auto *entry = getOrCreateEntry(key)) {
+        entry->push_back(CustomPhrase(order, std::string(value)));
+    }
+}
+
+void CustomPhraseDict::pinPhrase(std::string_view key, std::string_view value) {
+    removePhrase(key, value);
+    if (auto *entry = getOrCreateEntry(key)) {
+        // enabled item is 1 based.
+        entry->insert(entry->begin(), CustomPhrase(1, std::string(value)));
+        normalizeData(*entry);
+    }
+}
+
+void CustomPhraseDict::removePhrase(std::string_view key,
+                                    std::string_view value) {
+
+    auto index = index_.exactMatchSearch(key);
+    if (TrieType::isNoValue(index)) {
+        return;
+    }
+
+    data_[index].erase(std::remove_if(data_[index].begin(), data_[index].end(),
+                                      [&value](const CustomPhrase &item) {
+                                          return value == item.value();
+                                      }),
+                       data_[index].end());
 }
 
 void CustomPhraseDict::save(std::ostream &out) const {
@@ -450,7 +517,7 @@ void CustomPhraseDict::save(std::ostream &out) const {
             } else {
                 out << phrase.value();
             }
-            out << std::endl;
+            out << '\n';
         }
         return true;
     });
@@ -460,5 +527,4 @@ void CustomPhraseDict::clear() {
     index_.clear();
     data_.clear();
 }
-
 } // namespace fcitx

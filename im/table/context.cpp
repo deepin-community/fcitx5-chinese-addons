@@ -5,6 +5,18 @@
  *
  */
 #include "context.h"
+#include "ime.h"
+#include <cstddef>
+#include <fcitx-utils/stringutils.h>
+#include <fcitx-utils/textformatflags.h>
+#include <fcitx/text.h>
+#include <libime/core/prediction.h>
+#include <libime/core/userlanguagemodel.h>
+#include <libime/table/tablebaseddictionary.h>
+#include <libime/table/tablecontext.h>
+#include <memory>
+#include <string>
+#include <utility>
 
 namespace fcitx {
 
@@ -37,7 +49,7 @@ Text TableContext::preeditText(bool hint, bool clientPreedit) const {
                              format};
                 }
 
-                text.append(segText, flags);
+                text.append(std::move(segText), flags);
             }
         }
     }
@@ -49,7 +61,7 @@ Text TableContext::preeditText(bool hint, bool clientPreedit) const {
         codeText = hint ? customHint(currentCode()) : currentCode();
     }
 
-    text.append(codeText, {format});
+    text.append(std::move(codeText), {format});
 
     if (clientPreedit && *config_.preeditCursorPositionAtBeginning) {
         text.setCursor(0);

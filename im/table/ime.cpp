@@ -5,23 +5,51 @@
  *
  */
 #include "ime.h"
-#include "config.h"
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/range/adaptor/reversed.hpp>
+#include <cstdint>
+#include <exception>
 #include <fcitx-config/iniparser.h>
+#include <fcitx-config/rawconfig.h>
+#include <fcitx-utils/key.h>
 #include <fcitx-utils/log.h>
+#include <fcitx-utils/macros.h>
 #include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/stringutils.h>
 #include <fcntl.h>
+#include <fstream>
+#include <ios>
+#include <istream>
+#include <libime/core/languagemodel.h>
+#include <libime/core/userlanguagemodel.h>
 #include <libime/core/utils.h>
 #include <libime/table/tablebaseddictionary.h>
 #include <libime/table/tableoptions.h>
+#include <memory>
+#include <ostream>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <tuple>
+#include <unordered_set>
+#include <utility>
 
 namespace fcitx {
 
 FCITX_DEFINE_LOG_CATEGORY(table_logcategory, "table")
 
 namespace {
+
+struct BinaryOrTextDict {
+    bool operator()(const std::string &path, const std::string &dir,
+                    bool isUser) const {
+        FCITX_UNUSED(dir);
+        FCITX_UNUSED(isUser);
+        return stringutils::endsWith(path, ".txt") ||
+               stringutils::endsWith(path, ".dict");
+    }
+};
 
 libime::OrderPolicy converOrderPolicy(fcitx::OrderPolicy policy) {
     switch (policy) {
@@ -56,7 +84,7 @@ void populateOptions(libime::TableBasedDictionary *dict,
             endKeys.insert(chr);
         }
     }
-    options.setEndKey(endKeys);
+    options.setEndKey(std::move(endKeys));
     options.setExactMatch(*root.config->exactMatch);
     options.setLearning(*root.config->learning);
     options.setAutoPhraseLength(*root.config->autoPhraseLength);
@@ -66,7 +94,7 @@ void populateOptions(libime::TableBasedDictionary *dict,
     options.setLanguageCode(*root.im->languageCode);
     options.setSortByCodeLength(*root.config->sortByCodeLength);
 
-    dict->setTableOptions(options);
+    dict->setTableOptions(std::move(options));
 }
 } // namespace
 
@@ -84,7 +112,7 @@ TableIME::requestDict(const std::string &name) {
                    .first;
         auto &root = iter->second.root;
 
-        std::string filename = stringutils::joinPath(
+        const std::string filename = stringutils::joinPath(
             "inputmethod", stringutils::concat(name, ".conf"));
         auto files = StandardPath::global().openAll(StandardPath::Type::PkgData,
                                                     filename, O_RDONLY);
@@ -98,7 +126,7 @@ TableIME::requestDict(const std::string &name) {
         // So "Default" can be reset to current value.
         root.syncDefaultValueToCurrent();
 
-        std::string customization =
+        const std::string customization =
             stringutils::joinPath("table", stringutils::concat(name, ".conf"));
         files = StandardPath::global().openAll(StandardPath::Type::PkgConfig,
                                                customization, O_RDONLY);
@@ -124,7 +152,9 @@ TableIME::requestDict(const std::string &name) {
             std::istream in(&buffer);
             dict->load(in);
             iter->second.dict = std::move(dict);
-        } catch (const std::exception &) {
+        } catch (const std::exception &e) {
+            TABLE_ERROR() << "Failed to load table: " << *root.config->file
+                          << ", error: " << e.what();
         }
 
         if (auto *dict = iter->second.dict.get()) {
@@ -142,6 +172,23 @@ TableIME::requestDict(const std::string &name) {
                 dict->loadUser(in);
             } catch (const std::exception &e) {
                 TABLE_DEBUG() << e.what();
+            }
+
+            dict->removeAllExtra();
+            auto extraDicts = StandardPath::global().locate(
+                StandardPath::Type::PkgData,
+                stringutils::concat("table/", name, ".dict.d"),
+                BinaryOrTextDict());
+            for (const auto &[name, file] : extraDicts) {
+                try {
+                    std::ifstream in(file, std::ios::in | std::ios::binary);
+                    const auto fileFormat = stringutils::endsWith(name, ".txt")
+                                                ? libime::TableFormat::Text
+                                                : libime::TableFormat::Binary;
+                    dict->loadExtra(in, fileFormat);
+                } catch (const std::exception &e) {
+                    TABLE_DEBUG() << e.what();
+                }
             }
 
             populateOptions(dict, iter->second.root);

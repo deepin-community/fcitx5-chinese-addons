@@ -5,6 +5,7 @@
  *
  */
 #include "chttrans-opencc.h"
+#include "chttrans.h"
 #include <fcitx-utils/standardpath.h>
 #include <fcitx-utils/stringutils.h>
 
@@ -16,15 +17,21 @@ bool OpenCCBackend::loadOnce(const ChttransConfig &config) {
 }
 
 std::string OpenCCBackend::locateProfile(const std::string &profile) {
-    auto profilePath = StandardPath::global().locate(
-        StandardPath::Type::Data, stringutils::joinPath("opencc", profile));
+    auto profilePath =
+        openCCStandardPath().locate(StandardPath::Type::PkgData, profile);
     return profilePath.empty() ? profile : profilePath;
 }
 
 void OpenCCBackend::updateConfig(const ChttransConfig &config) {
     auto s2tProfile = *config.openCCS2TProfile;
-    if (s2tProfile.empty()) {
-        s2tProfile = OPENCC_DEFAULT_CONFIG_SIMP_TO_TRAD;
+    if (s2tProfile.empty() || s2tProfile == "default") {
+        const std::string preferredS2TProfile = "s2tw.json";
+        // Means it's resolved.
+        if (locateProfile(preferredS2TProfile) != preferredS2TProfile) {
+            s2tProfile = preferredS2TProfile;
+        } else {
+            s2tProfile = OPENCC_DEFAULT_CONFIG_SIMP_TO_TRAD;
+        }
     }
     auto s2tProfilePath = locateProfile(s2tProfile);
     FCITX_DEBUG() << "s2tProfilePath: " << s2tProfilePath;
@@ -37,8 +44,14 @@ void OpenCCBackend::updateConfig(const ChttransConfig &config) {
     }
 
     auto t2sProfile = *config.openCCT2SProfile;
-    if (t2sProfile.empty()) {
-        t2sProfile = OPENCC_DEFAULT_CONFIG_TRAD_TO_SIMP;
+    if (t2sProfile.empty() || t2sProfile == "default") {
+        const std::string preferredT2SProfile = "tw2s.json";
+        // Means it's resolved.
+        if (locateProfile(preferredT2SProfile) != preferredT2SProfile) {
+            t2sProfile = preferredT2SProfile;
+        } else {
+            t2sProfile = OPENCC_DEFAULT_CONFIG_TRAD_TO_SIMP;
+        }
     }
     auto t2sProfilePath = locateProfile(t2sProfile);
     FCITX_DEBUG() << "t2sProfilePath: " << t2sProfilePath;

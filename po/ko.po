@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fcitx5-chinese-addons\n"
 "Report-Msgid-Bugs-To: fcitx-dev@googlegroups.com\n"
-"POT-Creation-Date: 2023-11-02 12:11+0000\n"
+"POT-Creation-Date: 2024-05-25 20:24+0000\n"
 "PO-Revision-Date: 2017-11-23 04:30+0000\n"
 "Last-Translator: Junghee Lee <daemul72@gmail.com>, 2022\n"
 "Language-Team: Korean (https://app.transifex.com/fcitx/teams/12005/ko/)\n"
@@ -20,11 +20,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: im/table/state.cpp:1146
+#: im/table/state.cpp:1148
 msgid " Return for "
 msgstr " Return for "
 
-#: im/table/state.cpp:1143
+#: im/table/state.cpp:1145
 msgid " for "
 msgstr " for "
 
@@ -102,16 +102,20 @@ msgstr "제거(&R)"
 msgid "&Usage"
 msgstr ""
 
-#: im/table/state.cpp:746
+#: im/table/state.cpp:117 im/pinyin/pinyincandidate.cpp:120
+msgid "(Half)"
+msgstr ""
+
+#: im/table/state.cpp:744
 msgctxt "Pinyin lookup delimeter"
 msgid ", "
 msgstr ""
 
-#: im/table/engine.h:41 im/pinyin/pinyin.h:71
+#: im/table/engine.h:42 im/pinyin/pinyin.h:91
 msgid "ABC"
 msgstr "ABC"
 
-#: im/pinyin/pinyin.h:149
+#: im/pinyin/pinyin.h:186
 msgid "Action when switching input method"
 msgstr ""
 
@@ -143,11 +147,11 @@ msgstr ""
 msgid "Allow use keypad key as table input"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:42
+#: modules/punctuation/punctuation.h:54
 msgid "Alternative Mapping"
 msgstr "대체 매핑"
 
-#: im/pinyin/pinyin.h:131
+#: im/pinyin/pinyin.h:168
 msgid "Always show Cloud Pinyin place holder"
 msgstr ""
 
@@ -175,7 +179,7 @@ msgstr "자동 후보 선택"
 msgid "Auto select when no match is found"
 msgstr "맞는 값이 없으면 자동 선택"
 
-#: modules/cloudpinyin/cloudpinyin.h:33
+#: modules/cloudpinyin/cloudpinyin.h:34
 msgid "Backend"
 msgstr "백엔드"
 
@@ -183,7 +187,7 @@ msgstr "백엔드"
 msgid "Bingchan"
 msgstr "Bingchan"
 
-#: gui/pinyindictmanager/browserdialog.cpp:66
+#: gui/pinyindictmanager/browserdialog.cpp:65
 msgid "Browse Sogou Cell Dict repository"
 msgstr "Sogou 셀 사전 저장소 찾아보기"
 
@@ -199,11 +203,11 @@ msgstr ""
 msgid "Chinese Addons"
 msgstr "한어 애드온"
 
-#: im/pinyin/pinyin.h:199
+#: im/pinyin/pinyin.h:252
 msgid "Choose Character from Phrase"
 msgstr "구문에서 문자 선택"
 
-#: im/pinyin/pinyin.h:63
+#: im/pinyin/pinyin.h:83
 msgid "Clear"
 msgstr ""
 
@@ -211,29 +215,33 @@ msgstr ""
 msgid "Clear &All Data"
 msgstr "모든 데이터 지우기(&A)"
 
-#: im/pinyin/pinyin.h:119 modules/cloudpinyin/cloudpinyin.conf.in.in:3
+#: im/pinyin/pinyin.h:156 modules/cloudpinyin/cloudpinyin.conf.in.in:3
 msgid "Cloud Pinyin"
 msgstr "Cloud Pinyin"
 
-#: im/pinyin/pinyin.h:124
+#: im/pinyin/pinyin.h:161
 msgid "Cloud Pinyin Index"
 msgstr "Cloud Pinyin 일련번호"
 
-#: im/pinyin/pinyin.cpp:1455
+#: im/pinyin/pinyin.cpp:1237
 msgid "Cloud Pinyin Status"
 msgstr "Cloud Pinyin 상태"
 
-#: im/pinyin/pinyin.cpp:1457
+#: im/pinyin/pinyin.cpp:1239
 msgid "Cloud Pinyin is disabled."
 msgstr "Cloud Pinyin이 비활성화됨."
 
-#: im/pinyin/pinyin.cpp:1456
+#: im/pinyin/pinyin.cpp:1238
 msgid "Cloud Pinyin is enabled."
 msgstr "Cloud Pinyin이 활성화되었습니다."
 
 #: im/table/ime.h:105
 msgid "Commit Invalid Segment"
 msgstr "잘못된 세그먼트 입력완료"
+
+#: im/pinyin/pinyin.h:228
+msgid "Commit Raw Input"
+msgstr ""
 
 #: im/table/ime.h:97
 msgid "Commit after auto select candidates"
@@ -243,12 +251,16 @@ msgstr "후보 자동 선택 후 입력완료"
 msgid "Commit buffer when deactivating input method"
 msgstr "입력기 비활성화 시 버퍼 입력완료"
 
-#: im/pinyin/pinyin.h:64
+#: im/pinyin/pinyin.h:84
 msgid "Commit current preedit"
 msgstr ""
 
-#: im/pinyin/pinyin.h:65
+#: im/pinyin/pinyin.h:85
 msgid "Commit default selection"
+msgstr ""
+
+#: im/pinyin/pinyin.h:98
+msgid "Commit preview"
 msgstr ""
 
 #: im/table/ime.h:110
@@ -259,8 +271,12 @@ msgstr ""
 "표에 없는 세그먼트를 입력완료합니다. 이 옵션은 일부 라틴어/작성 기반 표에 유"
 "용합니다."
 
-#: im/pinyin/pinyin.h:77
+#: im/pinyin/pinyin.h:109
 msgid "Common Typo"
+msgstr ""
+
+#: im/pinyin/pinyin.h:98
+msgid "Composing pinyin"
 msgstr ""
 
 #: gui/pinyindictmanager/pinyindictmanager.cpp:332
@@ -277,7 +293,11 @@ msgstr "변환하지 못했습니다."
 msgid "Converter crashed."
 msgstr "변환도구가 충돌했습니다."
 
-#: im/table/state.cpp:773
+#: im/pinyin/pinyin.h:133
+msgid "Correction Layout"
+msgstr ""
+
+#: im/table/state.cpp:771
 msgid "Could not find pinyin."
 msgstr "Pinyin을 찾을 수 없음"
 
@@ -295,12 +315,20 @@ msgstr "임시 파일 생성에 실패했습니다."
 msgid "Creating temp file failed. Please check the permission or disk space."
 msgstr "임시 파일을 만들지 못했습니다. 권한 또는 디스크 공간을 확인합니다."
 
-#: im/table/engine.h:43 im/pinyin/pinyin.h:73
+#: im/table/engine.h:44 im/pinyin/pinyin.h:93
 msgid "Custom"
 msgstr "사용자 지정"
 
 #: gui/customphraseeditor/customphraseeditor.cpp:163
 msgid "Custom Phrase Editor"
+msgstr ""
+
+#: modules/chttrans/chttrans.cpp:266
+msgid "Default"
+msgstr ""
+
+#: im/pinyin/pinyincandidate.cpp:373
+msgid "Delete from custom phrase"
 msgstr ""
 
 #. i18n: file: gui/pinyindictmanager/browserdialog_webkit.ui:14
@@ -324,7 +352,7 @@ msgstr "사전이 이미 존재합니다"
 msgid "Display Hint for word"
 msgstr "단어에 대한 힌트 보이기"
 
-#: im/table/engine.h:64
+#: im/table/engine.h:65
 msgid "Display Shuangpin when looking up pinyin"
 msgstr ""
 
@@ -332,11 +360,15 @@ msgstr ""
 msgid "Display custom hint"
 msgstr "사용자 지정 힌트 보이기"
 
-#: im/table/engine.h:40
+#: im/table/engine.h:41
 msgid "Do not display"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1180
+#: im/pinyin/pinyin.h:97
+msgid "Do not show"
+msgstr ""
+
+#: im/pinyin/pinyin.cpp:943
 #, c++-format
 msgid ""
 "Do you want to enable cloudpinyin now for better prediction? You can always "
@@ -345,7 +377,7 @@ msgstr ""
 "더 나은 예측을 위해 지금 Cloud pinin을 활성화하시겠습니까? 나중에 구성하거나 "
 "{} 키를 눌러 언제든지 전환할 수 있습니다."
 
-#: im/pinyin/pinyin.cpp:1175
+#: im/pinyin/pinyin.cpp:938
 msgid ""
 "Do you want to enable cloudpinyin now for better prediction? You can always "
 "toggle it later in configuration."
@@ -369,35 +401,35 @@ msgstr "다운로드 완료됨"
 msgid "Download started."
 msgstr "다운로드 시작됨."
 
-#: im/pinyin/pinyin.h:114
+#: im/pinyin/pinyin.h:151
 msgid "Enable Chaizi"
 msgstr "Chaizi 활성화"
 
-#: im/pinyin/pinyin.h:116
+#: im/pinyin/pinyin.h:153
 msgid "Enable Characters in Unicode CJK Extension B"
 msgstr ""
 
-#: im/pinyin/pinyin.h:122
+#: im/pinyin/pinyin.h:159
 msgid "Enable Cloud Pinyin"
 msgstr "Cloud Pinyin 사용"
 
-#: im/pinyin/pinyin.cpp:1189
+#: im/pinyin/pinyin.cpp:952
 msgid "Enable Cloudpinyin"
 msgstr "Cloudpinin 활성화"
 
-#: im/pinyin/pinyin.h:113
-msgid "Enable Emoji"
-msgstr "그림문자 활성화"
-
-#: im/table/engine.h:67 im/pinyin/pinyin.h:142
+#: im/table/engine.h:68 im/pinyin/pinyin.h:179
 msgid "Enable Prediction"
 msgstr "예측 사용가능"
 
-#: im/pinyin/pinyin.h:112
+#: im/pinyin/pinyin.h:148
 msgid "Enable Spell"
 msgstr "맞춤법 활성화"
 
-#: modules/chttrans/chttrans.h:33
+#: im/pinyin/pinyin.h:149
+msgid "Enable Symbols"
+msgstr ""
+
+#: modules/chttrans/chttrans.h:55
 msgid "Enabled Input Methods"
 msgstr "활성화된 입력기"
 
@@ -405,11 +437,11 @@ msgstr "활성화된 입력기"
 msgid "End key"
 msgstr "중지  키"
 
-#: im/pinyin/pinyin.h:246
+#: im/pinyin/pinyin.h:299
 msgid "Enter a string from the list will make it enter quickphrase mode."
 msgstr "목록의 문자열을 입력하면, 상용구 모드로 진입합니다."
 
-#: modules/punctuation/punctuation.h:50
+#: modules/punctuation/punctuation.h:62
 msgid "Entries"
 msgstr "항목"
 
@@ -462,7 +494,7 @@ msgstr "파일 작업 실패"
 msgid "File updated"
 msgstr ""
 
-#: im/pinyin/pinyin.h:208
+#: im/pinyin/pinyin.h:261
 msgid "Filter by stroke"
 msgstr "필획으로 필터링"
 
@@ -470,11 +502,15 @@ msgstr "필획으로 필터링"
 msgid "First candidate as Preedit"
 msgstr "사전편집으로 첫 후보"
 
-#: im/table/ime.h:120 im/pinyin/pinyin.h:138
+#: im/table/ime.h:120 im/pinyin/pinyin.h:175
 msgid "Fix embedded preedit cursor at the beginning of the preedit"
 msgstr "사전편집 커서를 사전편집 문자열의 맨 앞에 고정"
 
-#: im/table/engine.h:53 im/pinyin/pinyin.h:153
+#: im/pinyin/pinyincandidate.cpp:357
+msgid "Forget candidate"
+msgstr ""
+
+#: im/table/engine.h:54 im/pinyin/pinyin.h:190
 msgid "Forget word"
 msgstr "단어 잊기"
 
@@ -506,19 +542,19 @@ msgstr "전각 문자가 활성화되었습니다."
 msgid "Full width character"
 msgstr "전각 문자"
 
-#: modules/punctuation/punctuation.h:92
+#: modules/punctuation/punctuation.h:104
 msgid "Full width punctuation"
 msgstr "전각 문장부호"
 
-#: modules/punctuation/punctuation.cpp:253
+#: modules/punctuation/punctuation.cpp:272
 msgid "Full width punctuation is disabled."
 msgstr "전각 문장부호 비활성화되었습니다."
 
-#: modules/punctuation/punctuation.cpp:252
+#: modules/punctuation/punctuation.cpp:271
 msgid "Full width punctuation is enabled."
 msgstr "전각 문장부호가 활성화되었습니다."
 
-#: im/pinyin/pinyin.h:248
+#: im/pinyin/pinyin.h:301
 msgid "Fuzzy Pinyin Settings"
 msgstr "불분명한 Pinyin 설정"
 
@@ -526,11 +562,11 @@ msgstr "불분명한 Pinyin 설정"
 msgid "Half width Character"
 msgstr "반각 문자"
 
-#: modules/punctuation/punctuation.h:93
+#: modules/punctuation/punctuation.h:105
 msgid "Half width punctuation"
 msgstr "반각 문장부호"
 
-#: modules/punctuation/punctuation.h:30
+#: modules/punctuation/punctuation.h:42
 msgid "Half width punctuation after latin letter or number"
 msgstr "라틴 문자 또는 숫자 뒤의 반각 문장부호"
 
@@ -589,11 +625,11 @@ msgstr ""
 msgid "Ignore built in punctuation"
 msgstr "기본 구두점 무시"
 
-#: im/pinyin/pinyin.h:78
+#: im/pinyin/pinyin.h:110
 msgid "Inner Segment (xian -> xi'an)"
 msgstr "내부 세그먼트 (xian -> xi'an)"
 
-#: im/pinyin/pinyin.h:80
+#: im/pinyin/pinyin.h:112
 msgid "Inner Segment for Short Pinyin (qie -> qi'e)"
 msgstr "짧은 Pinyin을 위한 내부 세그먼트 (qie -> qi'e)"
 
@@ -605,12 +641,12 @@ msgstr "입력 사전 이름"
 msgid "Key"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:39
+#: modules/punctuation/punctuation.h:51
 msgctxt "Key of the punctuation, e.g. comma"
 msgid "Key"
 msgstr "키"
 
-#: im/table/ime.h:125 im/pinyin/pinyin.h:231
+#: im/table/ime.h:125 im/pinyin/pinyin.h:284
 msgid "Key to trigger quickphrase"
 msgstr "상용구를 트리거할 키"
 
@@ -626,23 +662,23 @@ msgstr "학습"
 msgid "Length limit of selecting the only candidate"
 msgstr "유일한 후보 선택의 길이 제한"
 
-#: im/table/engine.h:58
+#: im/table/engine.h:59
 msgid "Look up pinyin"
 msgstr ""
 
-#: im/table/engine.h:40 im/pinyin/pinyin.h:70
+#: im/table/engine.h:41 im/pinyin/pinyin.h:90
 msgid "MS"
 msgstr "MS"
 
-#: im/pinyin/pinyin.h:220
+#: im/pinyin/pinyin.h:273
 msgid "Manage Custom Phrase"
 msgstr ""
 
-#: im/pinyin/pinyin.h:218
+#: im/pinyin/pinyin.h:271
 msgid "Manage Dictionaries"
 msgstr ""
 
-#: modules/punctuation/punctuation.h:40
+#: modules/punctuation/punctuation.h:52
 msgid "Mapping"
 msgstr "매핑"
 
@@ -650,19 +686,19 @@ msgstr "매핑"
 msgid "Marker for auto phrase in the candidates"
 msgstr "후보의 자동 구문에 대한 표식"
 
-#: im/pinyin/pinyin.h:83
+#: im/pinyin/pinyin.h:115
 msgid "Match partial finals (e -> en, eng, ei)"
 msgstr "부분 접미사 매칭 (e -> en, eng, ei)"
 
-#: im/pinyin/pinyin.h:87
+#: im/pinyin/pinyin.h:119
 msgid "Match partial shuangpin if input length is longer than 4"
 msgstr "입력 길이가 4보다 긴 경우 일부의 이중자획 일치"
 
-#: modules/cloudpinyin/cloudpinyin.h:32
+#: modules/cloudpinyin/cloudpinyin.h:33
 msgid "Minimum Pinyin Length"
 msgstr "최소 Pinyin 문자 수"
 
-#: im/table/engine.h:48
+#: im/table/engine.h:49
 msgid "Modify dictionary"
 msgstr "사전 수정"
 
@@ -670,11 +706,17 @@ msgstr "사전 수정"
 msgid "New Dictionary Name:"
 msgstr "새로운 사전 이름:"
 
-#: im/table/ime.h:60 im/pinyin/pinyin.h:177
+#: modules/chttrans/opencc-profile-name.cpp:13
+msgctxt "OpenCC Profile"
+msgid ""
+"New Japanese Kanji (Shinjitai) to Traditional Chinese Characters (Kyūjitai)"
+msgstr ""
+
+#: im/table/ime.h:60 im/pinyin/pinyin.h:216
 msgid "Next Candidate"
 msgstr "다음 후보"
 
-#: im/pinyin/pinyin.h:165
+#: im/pinyin/pinyin.h:203
 msgid "Next Page"
 msgstr "다음 페이지"
 
@@ -682,16 +724,20 @@ msgstr "다음 페이지"
 msgid "Next page"
 msgstr "다음 페이지"
 
-#: im/table/ime.h:24 im/pinyin/pinyin.cpp:1186
+#: im/table/ime.h:24 im/pinyin/pinyin.cpp:949
 msgid "No"
 msgstr "아니요"
 
-#: gui/pinyindictmanager/browserdialog.cpp:116
+#: gui/pinyindictmanager/browserdialog.cpp:111
 msgid "No browsing outside pinyin.sogou.com, now redirect to home page."
 msgstr ""
 "pinyin.sogou.com 외부에서 검색하지 않고, 이제 홈 페이지로 리디렉션됩니다."
 
-#: im/table/engine.cpp:209
+#: im/pinyin/pinyin.h:105
+msgid "None"
+msgstr ""
+
+#: im/table/engine.cpp:216
 msgid "Not available"
 msgstr "사용할 수 없음"
 
@@ -699,15 +745,15 @@ msgstr "사용할 수 없음"
 msgid "Not set"
 msgstr "설정되지 않음"
 
-#: im/pinyin/pinyin.h:212
+#: im/pinyin/pinyin.h:265
 msgid "Number of Sentences"
 msgstr "문장 수"
 
-#: modules/chttrans/chttrans.h:37
+#: modules/chttrans/chttrans.h:60
 msgid "OpenCC profile for Simplified to Traditional"
 msgstr ""
 
-#: modules/chttrans/chttrans.h:40
+#: modules/chttrans/chttrans.h:65
 msgid "OpenCC profile for Traditional to Simplified"
 msgstr ""
 
@@ -735,7 +781,7 @@ msgstr ""
 msgid "Order:"
 msgstr ""
 
-#: im/table/ime.h:90 im/pinyin/pinyin.h:110
+#: im/table/ime.h:90 im/pinyin/pinyin.h:146
 msgid "Page size"
 msgstr "페이지 크기"
 
@@ -743,7 +789,11 @@ msgstr "페이지 크기"
 msgid "Phrase"
 msgstr ""
 
-#: im/pinyin/pinyin.cpp:1189 im/pinyin/pinyin.cpp:1454
+#: im/pinyin/pinyincandidate.cpp:367
+msgid "Pin to top as custom phrase"
+msgstr ""
+
+#: im/pinyin/pinyin.cpp:952 im/pinyin/pinyin.cpp:1236
 #: im/pinyin/pinyin-addon.conf.in.in:3 im/pinyin/pinyin.conf.in:3
 msgid "Pinyin"
 msgstr "Pinyin"
@@ -752,50 +802,54 @@ msgstr "Pinyin"
 msgid "Pinyin dictionary manager"
 msgstr "Pinyin 사전 관리도구"
 
-#: im/table/engine.h:42 im/pinyin/pinyin.h:72
+#: im/table/engine.h:43 im/pinyin/pinyin.h:92
 msgid "PinyinJiajia"
 msgstr "PinyinJiajia"
 
-#: im/table/state.cpp:722
+#: im/table/state.cpp:720
 msgid "Please use this functionality after typing some text."
 msgstr "글자를 입력한 후에 이 기능을 사용하세요."
 
-#: im/table/engine.cpp:77 im/table/engine.cpp:85 im/pinyin/pinyin.cpp:1015
-#: im/pinyin/pinyin.cpp:1025
+#: im/table/engine.cpp:78 im/table/engine.cpp:86 im/pinyin/pinyin.cpp:753
+#: im/pinyin/pinyin.cpp:763
 msgid "Prediction Disabled"
 msgstr ""
 
-#: im/table/engine.cpp:76 im/table/engine.cpp:84 im/pinyin/pinyin.cpp:1014
-#: im/pinyin/pinyin.cpp:1024
+#: im/table/engine.cpp:77 im/table/engine.cpp:85 im/pinyin/pinyin.cpp:752
+#: im/pinyin/pinyin.cpp:762
 msgid "Prediction Enabled"
 msgstr ""
 
-#: im/table/engine.h:70 im/pinyin/pinyin.h:145
+#: im/table/engine.h:71 im/pinyin/pinyin.h:182
 msgid "Prediction Size"
 msgstr "예측 크기"
+
+#: im/pinyin/pinyin.h:171
+msgid "Preedit Mode"
+msgstr ""
 
 #: im/table/ime.h:174
 msgid "Prefix key to trigger Pinyin"
 msgstr "Pinyin를 트리거할 전위 키"
 
-#: im/table/state.cpp:792
+#: im/table/state.cpp:790
 msgid "Press Backspace to forget."
 msgstr "무시하려면 백스페이스 키를 누릅니다."
 
-#: im/table/state.cpp:795
+#: im/table/state.cpp:793
 msgid "Press Delete to remove."
 msgstr "제거하려면 Delete 키를 누릅니다"
 
-#: im/table/state.cpp:789
+#: im/table/state.cpp:787
 msgid "Press space or enter to insert."
 msgstr "스페이스 키를 누르거나 Enter 키를 눌러 삽입합니다."
 
-#: im/pinyin/pinyin.cpp:1920
+#: im/pinyin/pinyin.cpp:1780
 #, c++-format
 msgid "Press {} for {}"
 msgstr "{}을 누릅니다 ({}의 경우)"
 
-#: im/pinyin/pinyin.cpp:1917
+#: im/pinyin/pinyin.cpp:1777
 #, c++-format
 msgid "Press {} for {} and Return for {}"
 msgstr " {} 키를 ({}의 경우) 누르고 {}의 경우 Return 키를 누릅니다."
@@ -808,29 +862,33 @@ msgstr "이전 후보"
 msgid "Prev page"
 msgstr "앞 페이지"
 
-#: im/pinyin/pinyin.h:171
+#: im/pinyin/pinyin.h:210
 msgid "Previous Candidate"
 msgstr "이전 후보"
 
-#: im/pinyin/pinyin.h:159
+#: im/pinyin/pinyin.h:196
 msgid "Previous Page"
 msgstr "이전 페이지"
 
-#: im/pinyin/pinyin.h:216
+#: im/pinyin/pinyin.h:269
 msgid "Prompt long word length when input length over (0 for disable)"
 msgstr "입력 길이가 초과될 때 프롬프트 긴 단어 길이(사용안할 경우 0)"
 
-#: modules/cloudpinyin/cloudpinyin.h:38
+#: modules/cloudpinyin/cloudpinyin.h:39
 msgid "Proxy"
 msgstr "프록시"
 
-#: im/pinyin/pinyin.h:223 modules/punctuation/punctuation.cpp:249
-#: modules/punctuation/punctuation.cpp:251
+#: im/pinyin/pinyin.h:276 modules/punctuation/punctuation.cpp:268
+#: modules/punctuation/punctuation.cpp:270
 #: modules/punctuation/punctuation.conf.in.in:3
 msgid "Punctuation"
 msgstr "문장부호"
 
-#: im/pinyin/pinyin.h:236
+#: im/pinyin/pinyin.h:105
+msgid "QWERTY"
+msgstr ""
+
+#: im/pinyin/pinyin.h:289
 msgid "Quick Phrase"
 msgstr "상용구"
 
@@ -857,15 +915,15 @@ msgstr "자동 구문가 ...번 입력되면 저장"
 msgid "Scel file (*.scel)"
 msgstr "Scel 파일 (*.scel)"
 
-#: im/pinyin/pinyin.h:183
+#: im/pinyin/pinyin.h:236
 msgid "Select 2nd Candidate"
 msgstr "두 번째 후보 선택"
 
-#: im/pinyin/pinyin.h:190
+#: im/pinyin/pinyin.h:243
 msgid "Select 3rd Candidate"
 msgstr "세 번째 후보 선택"
 
-#: im/table/ime.h:66
+#: im/table/ime.h:66 im/pinyin/pinyin.h:222
 msgid "Select Current Candidate"
 msgstr ""
 
@@ -897,43 +955,60 @@ msgstr "선택"
 msgid "Separator text between hint and candidate"
 msgstr "힌트와 후보 사이의 구분자 텍스트"
 
-#: im/pinyin/pinyin.h:128
+#: im/pinyin/pinyin.h:165
 msgid "Show animation when Cloud Pinyin is loading"
 msgstr ""
 
-#: im/pinyin/pinyin.h:141
+#: im/pinyin/pinyin.h:178
 msgid "Show complete pinyin in preedit"
 msgstr "사전편집에서 완성형 Pinyin 표시"
 
-#: im/pinyin/pinyin.h:109
+#: im/pinyin/pinyin.h:145
 msgid "Show current shuangpin mode"
 msgstr "현재 이중자획 모드 표시"
 
-#: im/table/engine.cpp:78 im/pinyin/pinyin.cpp:1016
+#: im/table/engine.cpp:79 im/pinyin/pinyin.cpp:754
 msgid "Show prediction words"
 msgstr "예상 단어 표시"
-
-#: im/pinyin/pinyin.h:134
-msgid "Show preedit within application"
-msgstr "응용프로그램 내에서 사전편집 표시"
 
 #: im/pinyin/shuangpin.conf.in:3
 msgid "Shuangpin"
 msgstr "이중자획"
 
-#: im/pinyin/pinyin.h:106
+#: im/pinyin/pinyin.h:142
 msgid "Shuangpin Profile"
 msgstr "이중자획 프로필"
 
-#: modules/chttrans/chttrans.h:78
+#: modules/chttrans/chttrans.h:104
 msgid "Simplified Chinese"
 msgstr "간화자"
 
-#: modules/chttrans/chttrans.cpp:76
+#: modules/chttrans/chttrans.cpp:122
 msgid "Simplified Chinese is enabled."
 msgstr "간화자가 활성화되었습니다."
 
-#: im/pinyin/pinyin.h:226 modules/chttrans/chttrans.cpp:70
+#: modules/chttrans/opencc-profile-name.cpp:11
+msgctxt "OpenCC Profile"
+msgid "Simplified Chinese to Traditional Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:18
+msgctxt "OpenCC Profile"
+msgid "Simplified Chinese to Traditional Chinese (Hong Kong variant)"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:10
+msgctxt "OpenCC Profile"
+msgid "Simplified Chinese to Traditional Chinese (Taiwan standard)"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:9
+msgctxt "OpenCC Profile"
+msgid ""
+"Simplified Chinese to Traditional Chinese (Taiwan standard, with phrases)"
+msgstr ""
+
+#: im/pinyin/pinyin.h:279 modules/chttrans/chttrans.cpp:116
 #: modules/chttrans/chttrans.conf.in.in:3
 msgid "Simplified and Traditional Chinese Translation"
 msgstr "간화자 및 정체자 번역"
@@ -946,15 +1021,15 @@ msgstr ""
 msgid "Sort candidates based on current context"
 msgstr "현재 컨텍스트를 기준으로 후보 정렬"
 
-#: im/pinyin/pinyin.h:241
+#: im/pinyin/pinyin.h:294
 msgid "Strings to trigger quick phrase"
 msgstr "상용구를 트리거할 문자열"
 
-#: modules/chttrans/chttrans.cpp:74
+#: modules/chttrans/chttrans.cpp:120
 msgid "Switch to Simplified Chinese"
 msgstr "간화자로 전환"
 
-#: modules/chttrans/chttrans.cpp:73
+#: modules/chttrans/chttrans.cpp:119
 msgid "Switch to Traditional Chinese"
 msgstr "정체자로 전환"
 
@@ -988,7 +1063,7 @@ msgid ""
 "The comment line is started with # or ;.\n"
 msgstr ""
 
-#: modules/cloudpinyin/cloudpinyin.h:42
+#: modules/cloudpinyin/cloudpinyin.h:43
 msgid ""
 "The proxy format must be the one that is supported by cURL. Usually it is in "
 "the format of [scheme]://[host]:[port], e.g. http://localhost:1080."
@@ -996,28 +1071,75 @@ msgstr ""
 "프록시 형식은 cURL이 지원하는 형식이어야 합니다. 통상적으로 [scheme]://"
 "[host]:[port] 형식입니다. 예: http://localhost:1080"
 
-#: modules/cloudpinyin/cloudpinyin.h:29
+#: modules/cloudpinyin/cloudpinyin.h:30
 msgid "Toggle Key"
 msgstr "전환 키"
 
-#: modules/fullwidth/fullwidth.h:19 modules/chttrans/chttrans.h:31
-#: modules/punctuation/punctuation.h:27
+#: modules/fullwidth/fullwidth.h:19 modules/chttrans/chttrans.h:53
+#: modules/punctuation/punctuation.h:39
 msgid "Toggle key"
 msgstr "전환 키"
 
-#: modules/chttrans/chttrans.h:77
+#: modules/chttrans/chttrans.h:103
 msgid "Traditional Chinese"
 msgstr "정체자"
 
-#: modules/chttrans/chttrans.cpp:75
+#: modules/chttrans/opencc-profile-name.cpp:12
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese (Hong Kong variant) to Simplified Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:16
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese (Hong Kong variant) to Traditional Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:5
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese (Taiwan standard) to Simplified Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:7
+msgctxt "OpenCC Profile"
+msgid ""
+"Traditional Chinese (Taiwan standard) to Simplified Chinese (with phrases)"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:6
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese (Taiwan standard) to Traditional Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:15
+msgctxt "OpenCC Profile"
+msgid ""
+"Traditional Chinese Characters (Kyūjitai) to New Japanese Kanji (Shinjitai)"
+msgstr ""
+
+#: modules/chttrans/chttrans.cpp:121
 msgid "Traditional Chinese is enabled."
 msgstr "정체자가 활성화되었습니다."
 
-#: modules/chttrans/chttrans.h:27
+#: modules/chttrans/opencc-profile-name.cpp:14
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese to Simplified Chinese"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:17
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese to Traditional Chinese (Hong Kong variant)"
+msgstr ""
+
+#: modules/chttrans/opencc-profile-name.cpp:8
+msgctxt "OpenCC Profile"
+msgid "Traditional Chinese to Traditional Chinese (Taiwan standard)"
+msgstr ""
+
+#: modules/chttrans/chttrans.h:49
 msgid "Translate engine"
 msgstr "번역 엔진"
 
-#: modules/punctuation/punctuation.h:33
+#: modules/punctuation/punctuation.h:45
 msgid "Type paired punctuations together (e.g. Quote)"
 msgstr "짝이 있는 문장부호를 함께 입력 (예: 따옴표)"
 
@@ -1025,23 +1147,23 @@ msgstr "짝이 있는 문장부호를 함께 입력 (예: 따옴표)"
 msgid "Usage"
 msgstr ""
 
-#: im/pinyin/pinyin.h:203
+#: im/pinyin/pinyin.h:256
 msgid "Use BackSpace to cancel the selection"
 msgstr ""
 
-#: im/pinyin/pinyin.h:195
+#: im/pinyin/pinyin.h:248
 msgid "Use Keypad as Selection key"
 msgstr "키패드를 선택 키로 사용"
 
-#: im/table/state.cpp:728
+#: im/table/state.cpp:726
 msgid "Use Left and Right to select character: "
 msgstr "왼쪽 및 오른쪽 키를 사용하여 문자 선택:"
 
-#: im/table/state.cpp:776
+#: im/table/state.cpp:774
 msgid "Use Left and Right to select text. "
 msgstr "왼쪽 및 오른쪽 키를 사용하여 텍스트를 선택합니다."
 
-#: im/pinyin/pinyin.h:235
+#: im/pinyin/pinyin.h:288
 msgid "Use V to trigger quickphrase"
 msgstr "V 키를 사용하여 상용구 트리거"
 
@@ -1127,7 +1249,7 @@ msgstr ""
 msgid "Wildcard matching Key"
 msgstr "와일드 카드 매칭 키"
 
-#: gui/pinyindictmanager/browserdialog.cpp:115
+#: gui/pinyindictmanager/browserdialog.cpp:110
 msgid "Wrong Link"
 msgstr "잘못된 링크"
 
@@ -1139,31 +1261,31 @@ msgstr "Wubi"
 msgid "Wubi Pinyin"
 msgstr "Wubi Pinyin"
 
-#: im/table/engine.h:43 im/pinyin/pinyin.h:73
+#: im/table/engine.h:44 im/pinyin/pinyin.h:93
 msgid "Xiaohe"
 msgstr "Xiaohe"
 
-#: im/pinyin/pinyin.cpp:1185
+#: im/pinyin/pinyin.cpp:948
 msgid "Yes"
 msgstr "예"
 
-#: im/table/engine.h:42 im/pinyin/pinyin.h:72
+#: im/table/engine.h:43 im/pinyin/pinyin.h:92
 msgid "Zhongwenzhixing"
 msgstr "Zhongwenzhixing"
 
-#: im/table/engine.h:41 im/pinyin/pinyin.h:71
+#: im/table/engine.h:42 im/pinyin/pinyin.h:91
 msgid "Ziguang"
 msgstr "Ziguang"
 
-#: im/table/engine.h:40 im/pinyin/pinyin.h:70 im/table/zrm.conf.in.in:3
+#: im/table/engine.h:41 im/pinyin/pinyin.h:90 im/table/zrm.conf.in.in:3
 msgid "Ziranma"
 msgstr "지란마"
 
-#: im/pinyin/pinyin.cpp:1691
+#: im/pinyin/pinyin.cpp:1474
 msgid "[Select the word to remove from history]"
 msgstr "[기록에서 삭제할 단어 선택]"
 
-#: im/pinyin/pinyin.cpp:1639
+#: im/pinyin/pinyin.cpp:1420
 msgid "[Stroke Filtering]"
 msgstr "[필획 필터링]"
 
@@ -1176,85 +1298,80 @@ msgstr "[필획 필터링]"
 msgid "about:blank"
 msgstr "about:blank"
 
-#: im/pinyin/pinyin.h:89
+#: im/pinyin/pinyin.h:121
 msgid "an <-> ang"
 msgstr "an <-> ang"
 
-#: im/pinyin/pinyin.h:95
+#: im/pinyin/pinyin.h:127
 msgid "c <-> ch"
 msgstr "c <-> ch"
 
-#: im/pinyin/pinyin.h:90
+#: im/pinyin/pinyin.h:122
 msgid "en <-> eng"
 msgstr "en <-> eng"
 
-#: im/pinyin/pinyin.h:96
+#: im/pinyin/pinyin.h:128
 msgid "f <-> h"
 msgstr "f <-> h"
 
-#: im/pinyin/pinyin.h:91
+#: im/pinyin/pinyin.h:123
 msgid "ian <-> iang"
 msgstr "ian <-> iang"
 
-#: im/pinyin/pinyin.h:92
+#: im/pinyin/pinyin.h:124
 msgid "in <-> ing"
 msgstr "in <-> ing"
 
-#: im/pinyin/pinyin.h:97
+#: im/pinyin/pinyin.h:129
 msgid "l <-> n"
 msgstr "l <-> n"
 
-#: im/pinyin/pinyin.h:98
+#: im/pinyin/pinyin.h:130
 msgid "s <-> sh"
 msgstr "s <-> sh"
 
-#: im/pinyin/pinyin.h:93
+#: im/pinyin/pinyin.h:125
 msgid "u <-> ou"
 msgstr "u <-> ou"
 
-#: im/pinyin/pinyin.h:88
+#: im/pinyin/pinyin.h:120
 msgid "u <-> v"
 msgstr "u <-> v"
 
-#: im/pinyin/pinyin.h:94
+#: im/pinyin/pinyin.h:126
 msgid "uan <-> uang"
 msgstr "uan <-> uang"
 
-#: im/pinyin/pinyin.h:76
+#: im/pinyin/pinyin.h:108
 msgid "ue -> ve"
 msgstr "ue -> ve"
 
-#: im/pinyin/pinyin.h:99
+#: im/pinyin/pinyin.h:131
 msgid "z <-> zh"
 msgstr "z <-> zh"
 
-#: im/table/state.cpp:117 im/pinyin/pinyin.cpp:223
-#, c++-format
-msgid "{0} (Half)"
-msgstr ""
-
-#: im/pinyin/pinyin.cpp:182 modules/pinyinhelper/pinyinhelper.cpp:80
+#: modules/pinyinhelper/pinyinhelper.cpp:80
 #, c++-format
 msgid "{0} ({1})"
 msgstr "{0} ({1})"
 
-#: im/table/state.cpp:767
+#: im/table/state.cpp:765
 #, c++-format
 msgctxt "Pinyin & Shuangpin"
 msgid "{0} ({1})"
 msgstr ""
 
-#: im/table/state.cpp:810
+#: im/table/state.cpp:808
 #, c++-format
 msgid "{0} is not in table."
 msgstr "{0}은 표에 없습니다."
 
-#: im/table/state.cpp:799
+#: im/table/state.cpp:797
 #, c++-format
 msgid "{0}: No corresponding code."
 msgstr "{0}: 해당 코드가 없음"
 
-#: im/table/state.cpp:783 im/table/state.cpp:807
+#: im/table/state.cpp:781 im/table/state.cpp:805
 #, c++-format
 msgid "{0}: {1}"
 msgstr "{0}: {1}"

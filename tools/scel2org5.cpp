@@ -9,6 +9,9 @@
 #include <cstring>
 #if defined(__linux__) || defined(__GLIBC__)
 #include <endian.h>
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#define le16toh(x) OSSwapLittleToHostInt16(x)
 #else
 #include <sys/endian.h>
 #endif
@@ -89,18 +92,20 @@ static const char deltbl_str[DELTBL_SIZE] = {'\x4c', '\0', '\x54', '\0',
                                              '\x42', '\0', '\x4c', '\0'};
 
 static void usage() {
-    puts("scel2org - Convert .scel file to libime compatible file (SEE NOTES "
-         "BELOW)\n"
-         "\n"
-         "  usage: scel2org [OPTION] [scel file]\n"
-         "\n"
-         "  -o <file>  specify the output file, if not specified, the output "
-         "will\n"
-         "             be stdout.\n"
-         "  -h         display this help.\n"
-         "\n"
-         "NOTES:\n"
-         "   Always check the produced output for errors.\n");
+    puts(
+        "scel2org - Convert .scel file to libime compatible file (SEE NOTES "
+        "BELOW)\n"
+        "\n"
+        "  usage: scel2org [OPTION] [scel file]\n"
+        "\n"
+        "  -o <file>  specify the output file, if not specified, the output "
+        "will\n"
+        "             be stdout.\n"
+        "  -t         specify the output to be in format of extra table dict.\n"
+        "  -h         display this help.\n"
+        "\n"
+        "NOTES:\n"
+        "   Always check the produced output for errors.\n");
     exit(1);
 }
 
@@ -108,14 +113,18 @@ int main(int argc, char **argv) {
     int c;
     const char *outputFile = nullptr;
     bool printDel = false;
+    bool table = false;
 
-    while ((c = getopt(argc, argv, "o:hd")) != -1) {
+    while ((c = getopt(argc, argv, "o:hdt")) != -1) {
         switch (c) {
         case 'o':
             outputFile = optarg;
             break;
         case 'd':
             printDel = true;
+            break;
+        case 't':
+            table = true;
             break;
         case 'h':
         default:
@@ -194,6 +203,10 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (table) {
+        *out << "[Phrase]" << std::endl;
+    }
+
     bool mightBeDelTbl = false;
     while (true) {
         uint16_t symcount;
@@ -233,13 +246,17 @@ int main(int argc, char **argv) {
             std::string bufout = unicodeToUTF8(buf.data(), buf.size());
 
             if (wordcount > 0) {
-                *out << bufout << "\t";
-                *out << pys[pyindex[0]];
-                for (auto i = 1; i < wordcount; i++) {
-                    *out << '\'' << pys[pyindex[i]];
-                }
+                if (table) {
+                    *out << bufout << std::endl;
+                } else {
+                    *out << bufout << "\t";
+                    *out << pys[pyindex[0]];
+                    for (auto i = 1; i < wordcount; i++) {
+                        *out << '\'' << pys[pyindex[i]];
+                    }
 
-                *out << "\t0" << std::endl;
+                    *out << "\t0" << std::endl;
+                }
             }
 
             readUInt16(fd, &count, "failed to read count");
