@@ -9,14 +9,25 @@
 
 #include <fcitx-config/configuration.h>
 #include <fcitx-config/enum.h>
+#include <fcitx-config/option.h>
+#include <fcitx-config/rawconfig.h>
 #include <fcitx-utils/i18n.h>
+#include <fcitx-utils/key.h>
+#include <fcitx-utils/keysymgen.h>
 #include <fcitx-utils/log.h>
+#include <fcitx-utils/macros.h>
 #include <fcitx-utils/misc.h>
 #include <fcitx/candidatelist.h>
+#include <libime/core/languagemodel.h>
 #include <libime/core/prediction.h>
 #include <libime/core/userlanguagemodel.h>
 #include <libime/table/tablebaseddictionary.h>
+#include <memory>
+#include <string>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace fcitx {
 
@@ -28,7 +39,7 @@ FCITX_CONFIG_ENUM_NAME_WITH_I18N(CandidateLayoutHint, N_("Not set"),
 struct NoSaveAnnotation {
     bool skipDescription() { return true; }
     bool skipSave() { return true; }
-    void dumpDescription(RawConfig &) const {}
+    void dumpDescription(RawConfig &config) const { FCITX_UNUSED(config); }
 };
 
 template <typename T>
@@ -118,7 +129,7 @@ FCITX_CONFIGURATION(
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
         _("Fix embedded preedit cursor at the beginning of the preedit"),
-        !isAndroid()};
+        !isAndroid() && !isApple()};
     Option<Key, KeyConstrain> quickphrase{
         this,
         "QuickPhraseKey",

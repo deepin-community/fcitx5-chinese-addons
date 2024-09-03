@@ -6,22 +6,68 @@
  */
 
 #include "chttrans.h"
+#include "chttrans-native.h"
+#include "config.h"
+#include <cassert>
+#include <cstddef>
+#include <exception>
 #include <fcitx-config/iniparser.h>
 #include <fcitx-utils/i18n.h>
+#include <fcitx-utils/log.h>
 #include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/addonfactory.h>
+#include <fcitx/addoninstance.h>
 #include <fcitx/addonmanager.h>
+#include <fcitx/event.h>
+#include <fcitx/inputcontext.h>
 #include <fcitx/inputmethodentry.h>
+#include <fcitx/instance.h>
+#include <fcitx/text.h>
+#include <fcitx/userinterface.h>
+#include <fcitx/userinterfacemanager.h>
 #include <fcntl.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #ifdef ENABLE_OPENCC
 #include "chttrans-opencc.h"
+#ifdef HAS_BOOST_JSON
+#include <boost/json/parse.hpp>
+#include <boost/json/src.hpp>
+#include <boost/json/value_to.hpp>
 #endif
-#include "chttrans-native.h"
-#include <fcitx/inputcontext.h>
-#include <fcitx/userinterfacemanager.h>
+#endif
 
 using namespace fcitx;
+
+std::unordered_map<std::string, std::string> openCCBuiltInPath() {
+    std::unordered_map<std::string, std::string> result;
+    std::string prefix;
+#ifdef OPENCC_PREFIX
+    prefix = OPENCC_PREFIX;
+#endif
+    if (!prefix.empty()) {
+        result["datadir"] = stringutils::joinPath(prefix, "share");
+        result["pkgdatadir"] = stringutils::joinPath(prefix, "share/opencc");
+    }
+    return result;
+}
+
+const StandardPath &openCCStandardPath() {
+    static const StandardPath standardPath(
+        "opencc", openCCBuiltInPath(), StandardPath::global().skipBuiltInPath(),
+        StandardPath::global().skipUserPath());
+    return standardPath;
+}
 
 static ChttransIMType inputMethodEntryType(const InputMethodEntry &entry) {
     if (entry.languageCode() == "zh_CN") {
@@ -74,7 +120,7 @@ Chttrans::Chttrans(fcitx::Instance *instance) : instance_(instance) {
                                       : _("Switch to Simplified Chinese"),
                         isTraditional ? _("Traditional Chinese is enabled.")
                                       : _("Simplified Chinese is enabled."),
-                        -1);
+                        1000);
                 }
                 keyEvent.filterAndAccept();
                 ic->updateUserInterface(UserInterfaceComponent::InputPanel);
@@ -83,7 +129,7 @@ Chttrans::Chttrans(fcitx::Instance *instance) : instance_(instance) {
     outputFilterConn_ = instance_->connect<Instance::OutputFilter>(
         [this](InputContext *inputContext, Text &text) {
             // Short cut for empty string.
-            if (text.size() <= 0) {
+            if (text.empty()) {
                 return;
             }
             if (!toggleAction_.isParent(&inputContext->statusArea())) {
@@ -202,6 +248,7 @@ void Chttrans::populateConfig() {
 
 void Chttrans::syncToConfig() {
     std::vector<std::string> values_;
+    values_.reserve(enabledIM_.size());
     for (const auto &id : enabledIM_) {
         values_.push_back(id);
     }
@@ -211,6 +258,45 @@ void Chttrans::syncToConfig() {
 void Chttrans::save() {
     syncToConfig();
     safeSaveAsIni(config_, "conf/chttrans.conf");
+}
+
+const Configuration *Chttrans::getConfig() const {
+#ifdef ENABLE_OPENCC
+    std::vector<std::pair<std::string, std::string>> profiles{
+        {"default", _("Default")}};
+    constexpr std::string_view JsonSuffix = ".json";
+    auto files =
+        openCCStandardPath().locate(StandardPath::Type::PkgData, ".",
+                                    filter::Suffix(std::string(JsonSuffix)));
+    profiles.reserve(files.size() + 1);
+    // files is std::map, so file name is already sorted.
+    for (const auto &file : files) {
+#ifdef HAS_BOOST_JSON
+        try {
+            std::ifstream in(file.second, std::ios::in | std::ios::binary);
+            std::string strBuf(std::istreambuf_iterator<char>(in), {});
+            auto jv = boost::json::parse(strBuf);
+            const auto &obj = jv.as_object();
+            auto name = boost::json::value_to<std::string>(obj.at("name"));
+            std::string description =
+                file.first.substr(0, file.first.size() - JsonSuffix.size());
+            if (!name.empty()) {
+                description = fmt::format("{0}: {1}", description,
+                                          C_("OpenCC Profile", name));
+            }
+            profiles.emplace_back(file.first, std::move(description));
+        } catch (const std::exception &e) {
+            FCITX_WARN() << "Failed to parse " << file.first;
+            profiles.emplace_back(file.first, file.first);
+        }
+#else
+        profiles.emplace_back(file.first, file.first);
+#endif
+    }
+    config_.openCCS2TProfile.annotation().setProfiles(profiles);
+    config_.openCCT2SProfile.annotation().setProfiles(std::move(profiles));
+#endif
+    return &config_;
 }
 
 std::string Chttrans::convert(ChttransIMType type, const std::string &str) {

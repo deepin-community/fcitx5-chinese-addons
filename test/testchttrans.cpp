@@ -60,7 +60,7 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         inputmethodgroup.inputMethodList().emplace_back("sim");
         inputmethodgroup.inputMethodList().emplace_back("trad");
         inputmethodgroup.setDefaultInputMethod("sim");
-        instance->inputMethodManager().setGroup(inputmethodgroup);
+        instance->inputMethodManager().setGroup(std::move(inputmethodgroup));
 
         FCITX_INFO() << instance->inputMethodManager()
                             .currentGroup()
@@ -107,7 +107,7 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         testfrontend->call<ITestFrontend::pushCommitExpectation>("皇后");
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("f"), false);
 
-        testfrontend->call<ITestFrontend::pushCommitExpectation>("啓動");
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("啟動");
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("g"), false);
 
         config.setValueByPath("OpenCCS2TProfile", "s2tw.json");

@@ -1,8 +1,53 @@
-fcitx5-chinese-addons (5.1.2-2deepin1) unstable; urgency=medium
+fcitx5-chinese-addons (5.1.6-3) unstable; urgency=medium
 
-  * remove taiwan flag
+  * debian/control: Rebuild against opencc 1.1.9.
 
- -- zsien <quezhiyong@deepin.org>  Tue, 11 Jun 2024 14:15:46 +0800
+ -- Boyuan Yang <byang@debian.org>  Thu, 15 Aug 2024 16:40:50 -0400
+
+fcitx5-chinese-addons (5.1.6-2) unstable; urgency=medium
+
+  * debian/control: Rebuild against opencc 1.1.8.
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 29 Jul 2024 20:47:42 -0400
+
+fcitx5-chinese-addons (5.1.6-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 01 Jun 2024 08:26:00 -0400
+
+fcitx5-chinese-addons (5.1.5-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/fcitx5-pinyin.install: Update file installation for emoji dict.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 24 Apr 2024 20:42:57 -0400
+
+fcitx5-chinese-addons (5.1.4-2) unstable; urgency=medium
+
+  * debian/fcitx5-chinese-addons.install: Move the installation of
+    Appdata metainfo XML file from the separate fcitx5-chinese-addons-data
+    package to the main fcitx5-chinese-addons metapackage to help the
+    package handling via Appstream-based package management software
+    such as KDE Discover and GNOME Software.
+    (Closes: #1069070) (LP: #2061664)
+  * debian/control: Add fcitx5-chinese-addons Breaks+Replaces on
+    fcitx5-chinese-addons-data (<< ${binary:Version}) for a smooth
+    transition.
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 15 Apr 2024 15:43:44 -0400
+
+fcitx5-chinese-addons (5.1.4-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 18 Mar 2024 22:28:42 -0400
+
+fcitx5-chinese-addons (5.1.3-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 10 Jan 2024 15:59:16 -0500
 
 fcitx5-chinese-addons (5.1.2-1) unstable; urgency=medium
 

@@ -5,9 +5,11 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@
 
+
+# Should re-enable Qt6 functionality after Plasma 6.x is packaged
 override_dh_auto_configure:
 ifeq (,$(filter $(DEB_HOST_ARCH), amd64 arm64 armhf i386 mips64el))
-	dh_auto_configure -- -DENABLE_BROWSER=OFF
+	dh_auto_configure -- -DENABLE_BROWSER=OFF -DUSE_QT6=Off
 else
-	dh_auto_configure -- -DUSE_WEBKIT=OFF
+	dh_auto_configure -- -DUSE_WEBKIT=OFF -DUSE_QT6=Off
 endif

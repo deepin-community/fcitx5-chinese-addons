@@ -8,27 +8,47 @@
 #define _PINYIN_PINYIN_H_
 
 #include "customphrase.h"
+#include "symboldictionary.h"
+#include "workerthread.h"
+#include <cstddef>
+#include <cstdint>
 #include <fcitx-config/configuration.h>
+#include <fcitx-config/enum.h>
 #include <fcitx-config/iniparser.h>
+#include <fcitx-config/option.h>
+#include <fcitx-config/rawconfig.h>
 #include <fcitx-utils/event.h>
+#include <fcitx-utils/handlertable.h>
 #include <fcitx-utils/i18n.h>
+#include <fcitx-utils/inputbuffer.h>
+#include <fcitx-utils/key.h>
+#include <fcitx-utils/keysym.h>
+#include <fcitx-utils/keysymgen.h>
 #include <fcitx-utils/misc.h>
 #include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/trackableobject.h>
 #include <fcitx/action.h>
 #include <fcitx/addonfactory.h>
+#include <fcitx/addoninstance.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/event.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputcontextproperty.h>
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
+#include <fcitx/text.h>
 #include <libime/pinyin/pinyincontext.h>
 #include <libime/pinyin/pinyinime.h>
 #include <libime/pinyin/pinyinprediction.h>
+#include <list>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace fcitx {
 
@@ -72,6 +92,18 @@ FCITX_CONFIG_ENUM_I18N_ANNOTATION(ShuangpinProfileEnum, N_("Ziranma"), N_("MS"),
                                   N_("Zhongwenzhixing"), N_("PinyinJiajia"),
                                   N_("Xiaohe"), N_("Custom"))
 
+enum class PreeditMode { No, ComposingPinyin, CommitPreview };
+
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(PreeditMode, N_("Do not show"),
+                                 N_("Composing pinyin"), N_("Commit preview"))
+
+enum class CorrectionLayout {
+    None,
+    Qwerty,
+};
+
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(CorrectionLayout, N_("None"), N_("QWERTY"))
+
 FCITX_CONFIGURATION(
     FuzzyConfig, Option<bool> ue{this, "VE_UE", _("ue -> ve"), true};
     Option<bool> commonTypo{this, "NG_GN", _("Common Typo"), true};
@@ -96,7 +128,11 @@ FCITX_CONFIGURATION(
     Option<bool> f{this, "F_H", _("f <-> h"), false};
     Option<bool> l{this, "L_N", _("l <-> n"), false};
     Option<bool> s{this, "S_SH", _("s <-> sh"), false};
-    Option<bool> z{this, "Z_ZH", _("z <-> zh"), false};)
+    Option<bool> z{this, "Z_ZH", _("z <-> zh"), false};
+    OptionWithAnnotation<CorrectionLayout, CorrectionLayoutI18NAnnotation>
+        correction{this, "Correction", _("Correction Layout"),
+                   isAndroid() ? CorrectionLayout::Qwerty
+                               : CorrectionLayout::None};)
 
 FCITX_CONFIGURATION(
     PinyinEngineConfig,
@@ -110,7 +146,8 @@ FCITX_CONFIGURATION(
     Option<int, IntConstrain> pageSize{this, "PageSize", _("Page size"), 7,
                                        IntConstrain(3, 10)};
     Option<bool> spellEnabled{this, "SpellEnabled", _("Enable Spell"), true};
-    Option<bool> emojiEnabled{this, "EmojiEnabled", _("Enable Emoji"), true};
+    Option<bool> symbolsEnabled{this, "SymbolsEnabled", _("Enable Symbols"),
+                                true};
     Option<bool> chaiziEnabled{this, "ChaiziEnabled", _("Enable Chaizi"), true};
     Option<bool> extBEnabled{this, "ExtBEnabled",
                              _("Enable Characters in Unicode CJK Extension B"),
@@ -130,19 +167,19 @@ FCITX_CONFIGURATION(
         keepCloudPinyinPlaceHolder{this, "KeepCloudPinyinPlaceHolder",
                                    _("Always show Cloud Pinyin place holder"),
                                    false};
-    Option<bool> showPreeditInApplication{this, "PreeditInApplication",
-                                          _("Show preedit within application"),
-                                          true};
+    OptionWithAnnotation<PreeditMode, PreeditModeI18NAnnotation> preeditMode{
+        this, "PreeditMode", _("Preedit Mode"),
+        isAndroid() ? PreeditMode::No : PreeditMode::ComposingPinyin};
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
         _("Fix embedded preedit cursor at the beginning of the preedit"),
-        !isAndroid()};
+        !isAndroid() && !isApple()};
     Option<bool> showActualPinyinInPreedit{
         this, "PinyinInPreedit", _("Show complete pinyin in preedit"), false};
     Option<bool> predictionEnabled{this, "Prediction", _("Enable Prediction"),
-                                   isAndroid() ? true : false};
+                                   isAndroid()};
     Option<int, IntConstrain> predictionSize{
-        this, "PredictionSize", _("Prediction Size"), 14, IntConstrain(3, 40)};
+        this, "PredictionSize", _("Prediction Size"), 49, IntConstrain(3, 100)};
     OptionWithAnnotation<SwitchInputMethodBehavior,
                          SwitchInputMethodBehaviorI18NAnnotation>
         switchInputMethodBehavior{this, "SwitchInputMethodBehavior",
@@ -157,13 +194,15 @@ FCITX_CONFIGURATION(
         this,
         "PrevPage",
         _("Previous Page"),
-        {Key(FcitxKey_minus), Key(FcitxKey_Up), Key(FcitxKey_KP_Up)},
+        {Key(FcitxKey_minus), Key(FcitxKey_Up), Key(FcitxKey_KP_Up),
+         Key(FcitxKey_Page_Up)},
         KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
     KeyListOption nextPage{
         this,
         "NextPage",
         _("Next Page"),
-        {Key(FcitxKey_equal), Key(FcitxKey_Down), Key(FcitxKey_KP_Down)},
+        {Key(FcitxKey_equal), Key(FcitxKey_Down), Key(FcitxKey_KP_Down),
+         Key(FcitxKey_Page_Down)},
         KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
     KeyListOption prevCandidate{
         this,
@@ -176,6 +215,20 @@ FCITX_CONFIGURATION(
         "NextCandidate",
         _("Next Candidate"),
         {Key("Tab")},
+        KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
+    KeyListOption currentCandidate{
+        this,
+        "CurrentCandidate",
+        _("Select Current Candidate"),
+        {Key(FcitxKey_space), Key(FcitxKey_KP_Space)},
+        KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
+    KeyListOption commitRawInput{
+        this,
+        "CommitRawInput",
+        _("Commit Raw Input"),
+        {Key("Return"), Key("KP_Enter"), Key("Control+Return"),
+         Key("Control+KP_Enter"), Key("Shift+Return"), Key("Shift+KP_Enter"),
+         Key("Control+Shift+Return"), Key("Control+Shift+KP_Enter")},
         KeyListConstrain({KeyConstrainFlag::AllowModifierLess})};
     KeyListOption secondCandidate{
         this,
@@ -248,14 +301,41 @@ FCITX_CONFIGURATION(
     Option<FuzzyConfig> fuzzyConfig{this, "Fuzzy", _("Fuzzy Pinyin Settings")};
     HiddenOption<bool> firstRun{this, "FirstRun", "FirstRun", true};)
 
-class PinyinState;
 struct EventSourceTime;
 class CandidateList;
+class PinyinEngine;
 
-class PinyinEngine final : public InputMethodEngineV3 {
+enum class PinyinMode { Normal, StrokeFilter, ForgetCandidate, Punctuation };
+
+class PinyinState : public InputContextProperty {
+public:
+    PinyinState(PinyinEngine *engine);
+
+    libime::PinyinContext context_;
+    bool lastIsPunc_ = false;
+
+    PinyinMode mode_ = PinyinMode::Normal;
+
+    // Stroke filter
+    std::shared_ptr<CandidateList> strokeCandidateList_;
+    InputBuffer strokeBuffer_;
+
+    // Forget candidate
+    std::shared_ptr<CandidateList> forgetCandidateList_;
+
+    std::unique_ptr<EventSourceTime> cancelLastEvent_;
+
+    std::optional<std::vector<std::string>> predictWords_;
+
+    int keyReleased_ = -1;
+    int keyReleasedIndex_ = -2;
+};
+
+class PinyinEngine final : public InputMethodEngineV3,
+                           public TrackableObject<PinyinEngine> {
 public:
     PinyinEngine(Instance *instance);
-    ~PinyinEngine();
+    ~PinyinEngine() override;
     Instance *instance() { return instance_; }
     void activate(const InputMethodEntry &entry,
                   InputContextEvent &event) override;
@@ -284,7 +364,7 @@ public:
     }
 
     void setSubConfig(const std::string &path,
-                      const fcitx::RawConfig &) override;
+                      const fcitx::RawConfig &config) override;
 
     libime::PinyinIME *ime() { return ime_.get(); }
     const auto &config() const { return config_; }
@@ -296,6 +376,11 @@ public:
 
     void resetStroke(InputContext *inputContext) const;
     void resetForgetCandidate(InputContext *inputContext) const;
+    void forgetCandidate(InputContext *inputContext, size_t index);
+    void pinCustomPhrase(InputContext *inputContext,
+                         const std::string &customPhrase);
+    void deleteCustomPhrase(InputContext *inputContext,
+                            const std::string &customPhrase);
 
     FCITX_ADDON_DEPENDENCY_LOADER(cloudpinyin, instance_->addonManager());
 
@@ -309,7 +394,7 @@ private:
     bool handleCloudpinyinTrigger(KeyEvent &event);
     bool handle2nd3rdSelection(KeyEvent &event);
     bool handleCandidateList(KeyEvent &event);
-    bool handleNextPage(KeyEvent &event);
+    bool handleNextPage(KeyEvent &event) const;
     bool handleStrokeFilter(KeyEvent &event);
     bool handleForgetCandidate(KeyEvent &event);
     bool handlePunc(KeyEvent &event);
@@ -341,7 +426,10 @@ private:
     void loadBuiltInDict();
     void loadExtraDict();
     void loadCustomPhrase();
-    void loadDict(const StandardPathFile &file);
+    void loadSymbols(const StandardPathFile &file);
+    void loadDict(const std::string &fullPath,
+                  std::list<std::unique_ptr<TaskToken>> &taskTokens);
+    void saveCustomPhrase();
 
     Instance *instance_;
     PinyinEngineConfig config_;
@@ -355,9 +443,13 @@ private:
     SimpleAction predictionAction_;
     libime::PinyinPrediction prediction_;
     std::unique_ptr<EventSource> deferEvent_;
-    std::unique_ptr<EventSource> checkCloudPinyinAvailable_;
+    std::unique_ptr<EventSource> deferredPreload_;
     std::unique_ptr<HandlerTableEntry<EventHandler>> event_;
     CustomPhraseDict customPhrase_;
+    SymbolDict symbols_;
+    WorkerThread worker_;
+    std::list<std::unique_ptr<TaskToken>> persistentTask_;
+    std::list<std::unique_ptr<TaskToken>> tasks_;
 
     FCITX_ADDON_DEPENDENCY_LOADER(quickphrase, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(fullwidth, instance_->addonManager());
@@ -368,7 +460,7 @@ private:
     FCITX_ADDON_DEPENDENCY_LOADER(spell, instance_->addonManager());
     FCITX_ADDON_DEPENDENCY_LOADER(imeapi, instance_->addonManager());
 
-    static constexpr size_t NumBuiltInDict = 3;
+    static constexpr size_t NumBuiltInDict = 2;
 };
 
 class PinyinEngineFactory : public AddonFactory {

@@ -1,10 +1,13 @@
 set(PINYIN_SOURCES
     pinyin.cpp
     customphrase.cpp
+    symboldictionary.cpp
+    workerthread.cpp
+    pinyincandidate.cpp
 )
 
 add_library(pinyin MODULE ${PINYIN_SOURCES})
-target_link_libraries(pinyin Fcitx5::Core Fcitx5::Config LibIME::Pinyin Boost::iostreams Fcitx5::Module::Punctuation Fcitx5::Module::QuickPhrase Fcitx5::Module::Notifications Fcitx5::Module::Spell Fcitx5::Module::PinyinHelper ${FMT_TARGET})
+target_link_libraries(pinyin Fcitx5::Core Fcitx5::Config LibIME::Pinyin Boost::iostreams Fcitx5::Module::Punctuation Fcitx5::Module::QuickPhrase Fcitx5::Module::Notifications Fcitx5::Module::Spell Fcitx5::Module::PinyinHelper Pthread::Pthread ${FMT_TARGET})
 
 if (TARGET Fcitx5::Module::LuaAddonLoader)
     target_compile_definitions(pinyin PRIVATE -DFCITX_HAS_LUA)
@@ -23,16 +26,14 @@ fcitx5_translate_desktop_file("${CMAKE_CURRENT_BINARY_DIR}/pinyin-addon.conf.in"
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pinyin-addon.conf" RENAME pinyin.conf DESTINATION "${FCITX_INSTALL_PKGDATADIR}/addon"
         COMPONENT config)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/emoji.dict"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/emoji.txt" LibIME::pinyindict
-  COMMAND LibIME::pinyindict "${CMAKE_CURRENT_SOURCE_DIR}/emoji.txt" "${CMAKE_CURRENT_BINARY_DIR}/emoji.dict")
-add_custom_target(emoji-dict ALL DEPENDS "emoji.dict")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/emoji.dict" DESTINATION "${FCITX_INSTALL_PKGDATADIR}/pinyin")
+install(FILES "symbols" DESTINATION "${FCITX_INSTALL_PKGDATADIR}/pinyin" COMPONENT config)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/chaizi.txt" LibIME::pinyindict
-  COMMAND LibIME::pinyindict "${CMAKE_CURRENT_SOURCE_DIR}/chaizi.txt" "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict")
-add_custom_target(chaizi-dict ALL DEPENDS "chaizi.dict")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict" DESTINATION "${FCITX_INSTALL_PKGDATADIR}/pinyin")
+if (ENABLE_DATA)
+
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/chaizi.txt" LibIME::pinyindict
+    COMMAND LibIME::pinyindict "${CMAKE_CURRENT_SOURCE_DIR}/chaizi.txt" "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict")
+  add_custom_target(chaizi-dict ALL DEPENDS "chaizi.dict")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/chaizi.dict" DESTINATION "${FCITX_INSTALL_PKGDATADIR}/pinyin")
+endif()

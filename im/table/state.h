@@ -9,7 +9,18 @@
 
 #include "context.h"
 #include "engine.h"
+#include "ime.h"
+#include <cstddef>
+#include <fcitx-utils/inputbuffer.h>
+#include <fcitx/candidatelist.h>
+#include <fcitx/event.h>
 #include <fcitx/inputcontextproperty.h>
+#include <fcitx/inputmethodentry.h>
+#include <list>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace fcitx {
 
@@ -77,7 +88,7 @@ private:
     bool handleLookupPinyinOrModifyDictionaryMode(KeyEvent &event);
 
     bool isContextEmpty() const;
-    bool autoSelectCandidate();
+    bool autoSelectCandidate() const;
     std::unique_ptr<CandidateList>
     predictCandidateList(const std::vector<std::string> &words);
     std::string commitSegements(size_t from, size_t to);
@@ -97,6 +108,26 @@ private:
     int keyReleased_ = -1;
     int keyReleasedIndex_ = -2;
 };
+
+class CommitAfterSelectWrapper {
+public:
+    CommitAfterSelectWrapper(TableState *state) : state_(state) {
+        if (auto *context = state->updateContext(nullptr)) {
+            commitFrom_ = static_cast<int>(context->selectedSize());
+        }
+    }
+
+    ~CommitAfterSelectWrapper() {
+        if (commitFrom_ >= 0) {
+            state_->commitAfterSelect(commitFrom_);
+        }
+    }
+
+private:
+    TableState *state_;
+    int commitFrom_ = -1;
+};
+
 } // namespace fcitx
 
 #endif // _TABLE_STATE_H_

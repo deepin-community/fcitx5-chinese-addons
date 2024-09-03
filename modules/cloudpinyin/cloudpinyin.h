@@ -16,6 +16,7 @@
 #include <fcitx-utils/eventdispatcher.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/misc.h>
+#include <fcitx-utils/trackableobject.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addoninstance.h>
 #include <fcitx/instance.h>
@@ -45,16 +46,17 @@ FCITX_CONFIGURATION(
 
 class Backend {
 public:
-    virtual void prepareRequest(CurlQueue *queue,
-                                const std::string &pinyin) = 0;
+    FCITX_NODISCARD virtual bool prepareRequest(CurlQueue *queue,
+                                                const std::string &pinyin) = 0;
     virtual std::string parseResult(CurlQueue *queue) = 0;
     virtual ~Backend() = default;
 };
 
-class CloudPinyin : public fcitx::AddonInstance {
+class CloudPinyin : public fcitx::AddonInstance,
+                    public fcitx::TrackableObject<CloudPinyin> {
 public:
     CloudPinyin(fcitx::AddonManager *manager);
-    ~CloudPinyin();
+    ~CloudPinyin() override;
 
     void reloadConfig() override;
     const fcitx::Configuration *getConfig() const override { return &config_; }
@@ -80,7 +82,7 @@ private:
     FCITX_ADDON_EXPORT_FUNCTION(CloudPinyin, resetError);
     std::unique_ptr<FetchThread> thread_;
     fcitx::EventLoop *eventLoop_;
-    fcitx::EventDispatcher dispatcher_;
+    fcitx::EventDispatcher &dispatcher_;
     std::unique_ptr<fcitx::EventSourceIO> event_;
     std::unique_ptr<fcitx::EventSourceTime> resetError_;
     LRUCache<std::string, std::string> cache_{2048};

@@ -3,7 +3,7 @@ usr/share/fcitx5/addon/pinyin.conf
 usr/share/fcitx5/inputmethod/pinyin.conf
 usr/share/fcitx5/inputmethod/shuangpin.conf
 usr/share/fcitx5/pinyin/chaizi.dict
-usr/share/fcitx5/pinyin/emoji.dict
+usr/share/fcitx5/pinyin/symbols
 usr/share/icons/hicolor/*/apps/fcitx-pinyin.png
 usr/share/icons/hicolor/*/apps/fcitx-remind-*.png
 usr/share/icons/hicolor/*/apps/fcitx-shuangpin.png
