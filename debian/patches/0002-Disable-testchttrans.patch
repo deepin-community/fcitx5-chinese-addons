@@ -8,10 +8,10 @@ It currentlly fails. Disable temporary
  1 file changed, 1 deletion(-)
 
 diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
-index fb65f2d..d4af4fb 100644
+index 4d3d1ec..7cfb9f6 100644
 --- a/test/CMakeLists.txt
 +++ b/test/CMakeLists.txt
-@@ -26,7 +26,6 @@ add_subdirectory(inputmethod)
+@@ -24,7 +24,6 @@ add_subdirectory(inputmethod)
  add_executable(testchttrans testchttrans.cpp)
  target_link_libraries(testchttrans Fcitx5::Core Fcitx5::Module::TestFrontend Fcitx5::Module::TestIM Pthread::Pthread)
  add_dependencies(testchttrans chttrans chttrans.conf.in-fmt copy-addon copy-testim)

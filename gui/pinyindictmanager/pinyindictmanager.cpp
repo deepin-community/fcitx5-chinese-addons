@@ -64,8 +64,6 @@ PinyinDictManager::PinyinDictManager(QWidget *parent)
             &PinyinDictManager::removeDict);
     connect(removeAllButton_, &QPushButton::clicked, this,
             &PinyinDictManager::removeAllDict);
-    connect(openDirectoryButton_, &QPushButton::clicked, this,
-            &PinyinDictManager::openUserDirectory);
 
     connect(pipeline_, &Pipeline::finished, this, [this]() {
         setEnabled(true);
@@ -384,14 +382,6 @@ void PinyinDictManager::clearUserDict() {
 
 void PinyinDictManager::clearAllDict() {
     Q_EMIT saveSubConfig("fcitx://config/addon/pinyin/clearalldict");
-}
-
-void PinyinDictManager::openUserDirectory() {
-    QString path = prepareDirectory();
-    if (path.isEmpty()) {
-        return;
-    }
-    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 } // namespace fcitx

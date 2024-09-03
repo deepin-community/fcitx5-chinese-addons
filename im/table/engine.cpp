@@ -7,7 +7,6 @@
 #include "engine.h"
 #include "config.h"
 #include "context.h"
-#include "ime.h"
 #include "punctuation_public.h"
 #include "state.h"
 #include <boost/algorithm/string.hpp>
@@ -29,13 +28,8 @@
 #include <fcntl.h>
 #include <libime/core/historybigram.h>
 #include <libime/core/userlanguagemodel.h>
-#include <libime/pinyin/pinyinencoder.h>
-#include <libime/pinyin/shuangpinprofile.h>
 #include <libime/table/tablebaseddictionary.h>
-#include <map>
-#include <memory>
 #include <quickphrase_public.h>
-#include <unordered_map>
 
 namespace fcitx {
 
@@ -50,7 +44,11 @@ TableEngine::TableEngine(Instance *instance)
     events_.emplace_back(instance_->watchEvent(
         EventType::InputMethodGroupChanged, EventWatcherPhase::Default,
         [this](Event &) {
-            releaseStates();
+            instance_->inputContextManager().foreach([this](InputContext *ic) {
+                auto *state = ic->propertyFor(&factory_);
+                state->release();
+                return true;
+            });
             std::unordered_set<std::string> names;
             for (const auto &im : instance_->inputMethodManager()
                                       .currentGroup()
@@ -72,17 +70,12 @@ TableEngine::TableEngine(Instance *instance)
             state->handle2nd3rdCandidate(keyEvent);
         }));
 
-    predictionAction_.setShortText(*config_.predictionEnabled
-                                       ? _("Prediction Enabled")
-                                       : _("Prediction Disabled"));
+    predictionAction_.setShortText(_("Prediction"));
     predictionAction_.setLongText(_("Show prediction words"));
     predictionAction_.connect<SimpleAction::Activated>(
         [this](InputContext *ic) {
             config_.predictionEnabled.setValue(!(*config_.predictionEnabled));
             saveConfig();
-            predictionAction_.setShortText(*config_.predictionEnabled
-                                               ? _("Prediction Enabled")
-                                               : _("Prediction Disabled"));
             predictionAction_.setIcon(*config_.predictionEnabled
                                           ? "fcitx-remind-active"
                                           : "fcitx-remind-inactive");
@@ -94,77 +87,7 @@ TableEngine::TableEngine(Instance *instance)
 
 TableEngine::~TableEngine() {}
 
-void TableEngine::reloadConfig() {
-    readAsIni(config_, "conf/table.conf");
-    populateConfig();
-}
-
-void TableEngine::populateConfig() {
-    reverseShuangPinTable_.reset();
-
-    std::unique_ptr<libime::ShuangpinProfile> shuangpinProfile;
-
-    if (*config_.shuangpinProfile == LookupShuangpinProfileEnum::Custom) {
-        auto file = StandardPath::global().open(StandardPath::Type::PkgConfig,
-                                                "pinyin/sp.dat", O_RDONLY);
-        if (file.isValid()) {
-            try {
-                boost::iostreams::stream_buffer<
-                    boost::iostreams::file_descriptor_source>
-                    buffer(file.fd(), boost::iostreams::file_descriptor_flags::
-                                          never_close_handle);
-                std::istream in(&buffer);
-                shuangpinProfile =
-                    std::make_unique<libime::ShuangpinProfile>(in);
-            } catch (const std::exception &e) {
-                TABLE_ERROR() << e.what();
-            }
-        } else {
-            TABLE_ERROR() << "Failed to open shuangpin profile.";
-        }
-    } else {
-        libime::ShuangpinBuiltinProfile profile =
-            libime::ShuangpinBuiltinProfile::Ziranma;
-#define TRANS_SP_PROFILE(PROFILE)                                              \
-    case LookupShuangpinProfileEnum::PROFILE:                                  \
-        profile = libime::ShuangpinBuiltinProfile::PROFILE;                    \
-        break;
-        switch (*config_.shuangpinProfile) {
-            TRANS_SP_PROFILE(Ziranma)
-            TRANS_SP_PROFILE(MS)
-            TRANS_SP_PROFILE(Ziguang)
-            TRANS_SP_PROFILE(ABC)
-            TRANS_SP_PROFILE(Zhongwenzhixing)
-            TRANS_SP_PROFILE(PinyinJiajia)
-            TRANS_SP_PROFILE(Xiaohe)
-        case LookupShuangpinProfileEnum::No:
-        default:
-            break;
-        }
-        shuangpinProfile = std::make_unique<libime::ShuangpinProfile>(profile);
-    }
-
-    if (!shuangpinProfile) {
-        return;
-    }
-
-    reverseShuangPinTable_ =
-        std::make_unique<std::multimap<std::string, std::string>>();
-    for (const auto &[input, pys] : shuangpinProfile->table()) {
-        for (const auto &[syl, fuzzy] : pys) {
-            if (fuzzy != libime::PinyinFuzzyFlag::None) {
-                continue;
-            }
-            reverseShuangPinTable_->emplace(syl.toString(), input);
-        }
-    }
-}
-
-void TableEngine::setSubConfig(const std::string &path, const RawConfig &) {
-    if (path == "reloaddict") {
-        reloadDict();
-    }
-}
+void TableEngine::reloadConfig() { readAsIni(config_, "conf/table.conf"); }
 
 void TableEngine::activate(const fcitx::InputMethodEntry &entry,
                            fcitx::InputContextEvent &event) {
@@ -227,20 +150,9 @@ void TableEngine::reset(const InputMethodEntry &entry,
     auto *inputContext = event.inputContext();
 
     auto *state = inputContext->propertyFor(&factory_);
-
-    if (state->mode() == TableMode::Punctuation) {
-        auto candidateList = inputContext->inputPanel().candidateList();
-        if (candidateList && event.type() != EventType::InputContextFocusOut) {
-            auto index = candidateList->cursorIndex();
-            if (index >= 0) {
-                candidateList->candidate(index).select(inputContext);
-            }
-        }
-    } else if (state->context() &&
-               *state->context()->config().commitWhenDeactivate) {
-        // The reason that we do not commit here is we want to force the
-        // behavior. When client get unfocused, the framework will try to commit
-        // the string.
+    // The reason that we do not commit here is we want to force the behavior.
+    // When client get unfocused, the framework will try to commit the string.
+    if (state->context() && *state->context()->config().commitWhenDeactivate) {
         state->commitBuffer(true,
                             event.type() == EventType::InputContextFocusOut);
     }
@@ -302,20 +214,6 @@ void TableEngine::setConfigForInputMethod(const InputMethodEntry &entry,
                                           const RawConfig &config) {
     ime_->updateConfig(entry.uniqueName(), config);
 }
-
-void TableEngine::releaseStates() {
-    instance_->inputContextManager().foreach([&](InputContext *ic) {
-        auto *state = ic->propertyFor(&factory_);
-        state->release();
-        return true;
-    });
-}
-
-void TableEngine::reloadDict() {
-    releaseStates();
-    ime_->reloadAllDict();
-}
-
 } // namespace fcitx
 
 FCITX_ADDON_FACTORY(fcitx::TableEngineFactory)
