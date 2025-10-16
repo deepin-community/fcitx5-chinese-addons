@@ -7,8 +7,6 @@
 #include "punctuation.h"
 #include "notifications_public.h"
 #include <algorithm>
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
 #include <cstdint>
 #include <exception>
 #include <fcitx-config/iniparser.h>
@@ -18,11 +16,11 @@
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
-#include <fcitx-utils/keysymgen.h>
+#include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/macros.h>
 #include <fcitx-utils/misc.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/addoninstance.h>
@@ -35,6 +33,7 @@
 #include <fcitx/statusarea.h>
 #include <fcitx/userinterfacemanager.h>
 #include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <istream>
@@ -153,8 +152,8 @@ void PunctuationProfile::set(const RawConfig &config) {
 }
 
 void PunctuationProfile::save(std::string_view name) const {
-    StandardPath::global().safeSave(
-        StandardPath::Type::PkgData,
+    StandardPaths::global().safeSave(
+        StandardPathsType::PkgData,
         stringutils::concat("punctuation/", profilePrefix, name),
         [this](int fd) {
             for (const auto &entry : *punctuationMapConfig_.entries) {
@@ -272,7 +271,7 @@ Punctuation::Punctuation(Instance *instance)
                                   : _("Full width punctuation is disabled."),
                         -1);
                 }
-                return keyEvent.filterAndAccept();
+                keyEvent.filterAndAccept();
             }
         }));
     eventWatchers_.emplace_back(instance_->watchEvent(
@@ -375,22 +374,25 @@ Punctuation::~Punctuation() {}
 void Punctuation::reloadConfig() {
     readAsIni(config_, "conf/punctuation.conf");
     loadProfiles();
+    toggleAction_.setHotkey(config_.hotkey.value());
 }
 
 void Punctuation::loadProfiles() {
-    auto systemFiles = StandardPath::global().locate(
-        StandardPath::Type::PkgData, "punctuation",
-        filter::Prefix(std::string(PunctuationProfile::profilePrefix)),
-        filter::Not(filter::User()));
-    auto allFiles = StandardPath::global().locate(
-        StandardPath::Type::PkgData, "punctuation",
-        filter::Prefix(std::string(PunctuationProfile::profilePrefix)));
+    auto filter = [](const std::filesystem::path &path) {
+        return path.filename().string().starts_with(
+            PunctuationProfile::profilePrefix);
+    };
+    auto systemFiles = StandardPaths::global().locate(
+        StandardPathsType::PkgData, "punctuation", filter,
+        StandardPathsMode::System);
+    auto allFiles = StandardPaths::global().locate(StandardPathsType::PkgData,
+                                                   "punctuation", filter);
 
     // Remove non-exist profiles.
     auto iter = profiles_.begin();
     while (iter != profiles_.end()) {
-        if (!allFiles.count(stringutils::concat(
-                PunctuationProfile::profilePrefix.size(), iter->first))) {
+        if (!allFiles.contains(stringutils::concat(
+                PunctuationProfile::profilePrefix, iter->first))) {
             iter = profiles_.erase(iter);
         } else {
             iter++;
@@ -398,10 +400,12 @@ void Punctuation::loadProfiles() {
     }
 
     for (const auto &file : allFiles) {
-        if (file.first.size() <= PunctuationProfile::profilePrefix.size()) {
+        if (file.first.string().size() <=
+            PunctuationProfile::profilePrefix.size()) {
             continue;
         }
-        auto lang = file.first.substr(PunctuationProfile::profilePrefix.size());
+        auto lang = file.first.string().substr(
+            PunctuationProfile::profilePrefix.size());
 
         auto iter = systemFiles.find(file.first);
         const bool hasSystemFile = iter != systemFiles.end();
@@ -575,4 +579,4 @@ void Punctuation::setSubConfig(const std::string &path,
     iter->second.save(lang);
 }
 
-FCITX_ADDON_FACTORY(PunctuationFactory);
+FCITX_ADDON_FACTORY_V2(punctuation, PunctuationFactory);

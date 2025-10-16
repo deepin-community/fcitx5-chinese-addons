@@ -5,19 +5,18 @@
  *
  */
 #include "ime.h"
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/range/adaptor/reversed.hpp>
 #include <cstdint>
 #include <exception>
 #include <fcitx-config/iniparser.h>
 #include <fcitx-config/rawconfig.h>
+#include <fcitx-utils/fdstreambuf.h>
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/macros.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/stringutils.h>
 #include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <istream>
@@ -28,6 +27,7 @@
 #include <libime/table/tableoptions.h>
 #include <memory>
 #include <ostream>
+#include <ranges>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -42,12 +42,8 @@ FCITX_DEFINE_LOG_CATEGORY(table_logcategory, "table")
 namespace {
 
 struct BinaryOrTextDict {
-    bool operator()(const std::string &path, const std::string &dir,
-                    bool isUser) const {
-        FCITX_UNUSED(dir);
-        FCITX_UNUSED(isUser);
-        return stringutils::endsWith(path, ".txt") ||
-               stringutils::endsWith(path, ".dict");
+    bool operator()(const std::filesystem::path &path) const {
+        return path.extension() == ".txt" || path.extension() == ".dict";
     }
 };
 
@@ -112,15 +108,17 @@ TableIME::requestDict(const std::string &name) {
                    .first;
         auto &root = iter->second.root;
 
-        const std::string filename = stringutils::joinPath(
-            "inputmethod", stringutils::concat(name, ".conf"));
-        auto files = StandardPath::global().openAll(StandardPath::Type::PkgData,
-                                                    filename, O_RDONLY);
-        // reverse the order, so we end up parse user file at last.
-        for (const auto &file : files | boost::adaptors::reversed) {
-            RawConfig rawConfig;
-            readFromIni(rawConfig, file.fd());
-            root.load(rawConfig, true);
+        const auto filename = std::filesystem::path("inputmethod") /
+                              stringutils::concat(name, ".conf");
+
+        for (auto mode : {StandardPathsMode::System, StandardPathsMode::User}) {
+            auto file = StandardPaths::global().open(StandardPathsType::PkgData,
+                                                     filename, mode);
+            if (file.isValid()) {
+                RawConfig rawConfig;
+                readFromIni(rawConfig, file.fd());
+                root.load(rawConfig, true);
+            }
         }
 
         // So "Default" can be reset to current value.
@@ -128,27 +126,26 @@ TableIME::requestDict(const std::string &name) {
 
         const std::string customization =
             stringutils::joinPath("table", stringutils::concat(name, ".conf"));
-        files = StandardPath::global().openAll(StandardPath::Type::PkgConfig,
-                                               customization, O_RDONLY);
-        // reverse the order, so we end up parse user file at last.
-        for (const auto &file : files | boost::adaptors::reversed) {
-            RawConfig rawConfig;
-            readFromIni(rawConfig, file.fd());
-            root.load(rawConfig, true);
+        for (auto mode : {StandardPathsMode::System, StandardPathsMode::User}) {
+            auto file = StandardPaths::global().open(
+                StandardPathsType::PkgConfig, customization, mode);
+            // reverse the order, so we end up parse user file at last.
+            if (file.isValid()) {
+                RawConfig rawConfig;
+                readFromIni(rawConfig, file.fd());
+                root.load(rawConfig, true);
+            }
         }
 
         try {
             auto dict = std::make_unique<libime::TableBasedDictionary>();
-            auto dictFile = StandardPath::global().open(
-                StandardPath::Type::PkgData, *root.config->file, O_RDONLY);
+            auto dictFile = StandardPaths::global().open(
+                StandardPathsType::PkgData, *root.config->file);
             TABLE_DEBUG() << "Load table at: " << *root.config->file;
-            if (dictFile.fd() < 0) {
+            if (!dictFile.isValid()) {
                 throw std::runtime_error("Couldn't open file");
             }
-            boost::iostreams::stream_buffer<
-                boost::iostreams::file_descriptor_source>
-                buffer(dictFile.fd(), boost::iostreams::file_descriptor_flags::
-                                          never_close_handle);
+            IFDStreamBuf buffer(dictFile.fd());
             std::istream in(&buffer);
             dict->load(in);
             iter->second.dict = std::move(dict);
@@ -159,15 +156,11 @@ TableIME::requestDict(const std::string &name) {
 
         if (auto *dict = iter->second.dict.get()) {
             try {
-                auto dictFile = StandardPath::global().openUser(
-                    StandardPath::Type::PkgData,
+                auto dictFile = StandardPaths::global().open(
+                    StandardPathsType::PkgData,
                     stringutils::concat("table/", name, ".user.dict"),
-                    O_RDONLY);
-                boost::iostreams::stream_buffer<
-                    boost::iostreams::file_descriptor_source>
-                    buffer(dictFile.fd(),
-                           boost::iostreams::file_descriptor_flags::
-                               never_close_handle);
+                    StandardPathsMode::User);
+                IFDStreamBuf buffer(dictFile.fd());
                 std::istream in(&buffer);
                 dict->loadUser(in);
             } catch (const std::exception &e) {
@@ -175,14 +168,14 @@ TableIME::requestDict(const std::string &name) {
             }
 
             dict->removeAllExtra();
-            auto extraDicts = StandardPath::global().locate(
-                StandardPath::Type::PkgData,
+            auto extraDicts = StandardPaths::global().locate(
+                StandardPathsType::PkgData,
                 stringutils::concat("table/", name, ".dict.d"),
                 BinaryOrTextDict());
             for (const auto &[name, file] : extraDicts) {
                 try {
                     std::ifstream in(file, std::ios::in | std::ios::binary);
-                    const auto fileFormat = stringutils::endsWith(name, ".txt")
+                    const auto fileFormat = name.extension() == ".txt"
                                                 ? libime::TableFormat::Text
                                                 : libime::TableFormat::Binary;
                     dict->loadExtra(in, fileFormat);
@@ -209,14 +202,11 @@ TableIME::requestDict(const std::string &name) {
                 !*iter->second.root.config->useContextBasedOrder);
 
             try {
-                auto dictFile = StandardPath::global().openUser(
-                    StandardPath::Type::PkgData,
-                    stringutils::concat("table/", name, ".history"), O_RDONLY);
-                boost::iostreams::stream_buffer<
-                    boost::iostreams::file_descriptor_source>
-                    buffer(dictFile.fd(),
-                           boost::iostreams::file_descriptor_flags::
-                               never_close_handle);
+                auto dictFile = StandardPaths::global().open(
+                    StandardPathsType::PkgData,
+                    stringutils::concat("table/", name, ".history"),
+                    StandardPathsMode::User);
+                IFDStreamBuf buffer(dictFile.fd());
                 std::istream in(&buffer);
                 iter->second.model->load(in);
             } catch (const std::exception &e) {
@@ -246,13 +236,13 @@ void TableIME::updateConfig(const std::string &name, const RawConfig &config) {
         populateOptions(iter->second.dict.get(), iter->second.root);
     }
 
-    safeSaveAsIni(iter->second.root, StandardPath::Type::PkgConfig,
+    safeSaveAsIni(iter->second.root, StandardPathsType::PkgConfig,
                   stringutils::concat("table/", name, ".conf"));
 }
 
 void TableIME::releaseUnusedDict(const std::unordered_set<std::string> &names) {
     for (auto iter = tables_.begin(); iter != tables_.end();) {
-        if (names.count(iter->first) == 0) {
+        if (!names.contains(iter->first)) {
             TABLE_DEBUG() << "Release unused table: " << iter->first;
             saveDict(iter->first);
             iter = tables_.erase(iter);
@@ -274,35 +264,29 @@ void TableIME::saveDict(const std::string &name) {
     }
     auto fileName = stringutils::joinPath("table", name);
 
-    StandardPath::global().safeSave(
-        StandardPath::Type::PkgData, fileName + ".user.dict", [dict](int fd) {
-            boost::iostreams::stream_buffer<
-                boost::iostreams::file_descriptor_sink>
-                buffer(fd, boost::iostreams::file_descriptor_flags::
-                               never_close_handle);
-            std::ostream out(&buffer);
-            try {
-                dict->saveUser(out);
-                return static_cast<bool>(out);
-            } catch (const std::exception &) {
-                return false;
-            }
-        });
+    StandardPaths::global().safeSave(StandardPathsType::PkgData,
+                                     fileName + ".user.dict", [dict](int fd) {
+                                         OFDStreamBuf buffer(fd);
+                                         std::ostream out(&buffer);
+                                         try {
+                                             dict->saveUser(out);
+                                             return static_cast<bool>(out);
+                                         } catch (const std::exception &) {
+                                             return false;
+                                         }
+                                     });
 
-    StandardPath::global().safeSave(
-        StandardPath::Type::PkgData, fileName + ".history", [lm](int fd) {
-            boost::iostreams::stream_buffer<
-                boost::iostreams::file_descriptor_sink>
-                buffer(fd, boost::iostreams::file_descriptor_flags::
-                               never_close_handle);
-            std::ostream out(&buffer);
-            try {
-                lm->save(out);
-                return static_cast<bool>(out);
-            } catch (const std::exception &) {
-                return false;
-            }
-        });
+    StandardPaths::global().safeSave(StandardPathsType::PkgData,
+                                     fileName + ".history", [lm](int fd) {
+                                         OFDStreamBuf buffer(fd);
+                                         std::ostream out(&buffer);
+                                         try {
+                                             lm->save(out);
+                                             return static_cast<bool>(out);
+                                         } catch (const std::exception &) {
+                                             return false;
+                                         }
+                                     });
 }
 
 void TableIME::reloadAllDict() {

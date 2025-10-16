@@ -11,13 +11,12 @@
 #include <fcitx-config/iniparser.h>
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/i18n.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputmethodentry.h>
 #include <fcntl.h>
-#include <fmt/format.h>
 #include <set>
 
 namespace fcitx {
@@ -77,8 +76,7 @@ void PinyinHelper::initQuickPhrase() {
                     auto result = lookup(c);
                     if (!result.empty()) {
                         auto py = stringutils::join(result, ", ");
-                        auto display = fmt::format(_("{0} ({1})"),
-                                                   utf8::UCS4ToUTF8(c), py);
+                        auto display = _("{0} ({1})", utf8::UCS4ToUTF8(c), py);
                         callback(display, display,
                                  QuickPhraseAction::DoNothing);
                     }
@@ -163,4 +161,4 @@ class PinyinHelperModuleFactory : public AddonFactory {
 };
 } // namespace fcitx
 
-FCITX_ADDON_FACTORY(fcitx::PinyinHelperModuleFactory)
+FCITX_ADDON_FACTORY_V2(pinyinhelper, fcitx::PinyinHelperModuleFactory)

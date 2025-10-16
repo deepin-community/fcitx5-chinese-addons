@@ -3,12 +3,13 @@ Name=Pinyin
 Category=InputMethod
 Version=@PROJECT_VERSION@
 Library=libpinyin
-Type=SharedLibrary
+Type=@FCITX_ADDON_TYPE@
 OnDemand=True
 Configurable=True
 
 [Addon/Dependencies]
-0=punctuation:@PROJECT_VERSION@
+0=core:@REQUIRED_FCITX_VERSION@
+1=punctuation:@PROJECT_VERSION@
 
 [Addon/OptionalDependencies]
 0=fullwidth:@PROJECT_VERSION@

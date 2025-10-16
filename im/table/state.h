@@ -89,6 +89,9 @@ private:
 
     bool isContextEmpty() const;
     bool autoSelectCandidate() const;
+
+    bool isComposeTableMode() const;
+
     std::unique_ptr<CandidateList>
     predictCandidateList(const std::vector<std::string> &words);
     std::string commitSegements(size_t from, size_t to);
@@ -107,6 +110,7 @@ private:
 
     int keyReleased_ = -1;
     int keyReleasedIndex_ = -2;
+    uint64_t lastKeyPressedTime_ = 0;
 };
 
 class CommitAfterSelectWrapper {

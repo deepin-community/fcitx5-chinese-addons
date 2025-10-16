@@ -8,13 +8,15 @@
 #include "chttrans.h"
 #include "chttrans-native.h"
 #include "config.h"
+#include "notifications_public.h"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <exception>
 #include <fcitx-config/iniparser.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/log.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/addonfactory.h>
@@ -28,10 +30,12 @@
 #include <fcitx/userinterface.h>
 #include <fcitx/userinterfacemanager.h>
 #include <fcntl.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
+#include <filesystem>
+#include <format>
 #include <fstream>
+#include <ios>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -49,23 +53,23 @@
 
 using namespace fcitx;
 
-std::unordered_map<std::string, std::string> openCCBuiltInPath() {
-    std::unordered_map<std::string, std::string> result;
-    std::string prefix;
+std::unordered_map<std::string, std::vector<std::filesystem::path>>
+openCCBuiltInPath() {
+    std::unordered_map<std::string, std::vector<std::filesystem::path>> result;
+    std::filesystem::path prefix;
 #ifdef OPENCC_PREFIX
     prefix = OPENCC_PREFIX;
 #endif
     if (!prefix.empty()) {
-        result["datadir"] = stringutils::joinPath(prefix, "share");
-        result["pkgdatadir"] = stringutils::joinPath(prefix, "share/opencc");
+        result["datadir"] = {prefix / "share"};
+        result["pkgdatadir"] = {prefix / "share/opencc"};
     }
     return result;
 }
 
-const StandardPath &openCCStandardPath() {
-    static const StandardPath standardPath(
-        "opencc", openCCBuiltInPath(), StandardPath::global().skipBuiltInPath(),
-        StandardPath::global().skipUserPath());
+const StandardPaths &openCCStandardPath() {
+    static const StandardPaths standardPath("opencc", openCCBuiltInPath(),
+                                            StandardPaths::global().options());
     return standardPath;
 }
 
@@ -159,9 +163,7 @@ Chttrans::Chttrans(fcitx::Instance *instance) : instance_(instance) {
                 size_t remainLength = newLength;
                 for (size_t i = 0; i < text.size(); i++) {
                     auto segmentLength = utf8::length(text.stringAt(i));
-                    if (remainLength < segmentLength) {
-                        segmentLength = remainLength;
-                    }
+                    segmentLength = std::min(remainLength, segmentLength);
                     remainLength -= segmentLength;
                     size_t segmentByteLength = utf8::ncharByteLength(
                         newString.begin() + off, segmentLength);
@@ -172,9 +174,7 @@ Chttrans::Chttrans(fcitx::Instance *instance) : instance_(instance) {
             }
             if (text.cursor() > 0) {
                 auto length = utf8::length(oldString, 0, text.cursor());
-                if (length > newLength) {
-                    length = newLength;
-                }
+                length = std::min(length, newLength);
                 newText.setCursor(
                     utf8::ncharByteLength(newText.toString().begin(), length));
             } else {
@@ -204,7 +204,7 @@ void Chttrans::toggle(InputContext *ic) {
         return;
     }
     const auto *entry = instance_->inputMethodEntry(ic);
-    if (enabledIM_.count(entry->uniqueName())) {
+    if (enabledIM_.contains(entry->uniqueName())) {
         enabledIM_.erase(entry->uniqueName());
     } else {
         enabledIM_.insert(entry->uniqueName());
@@ -244,6 +244,7 @@ void Chttrans::populateConfig() {
     } else {
         currentBackend_ = iter->second.get();
     }
+    toggleAction_.setHotkey(config_.hotkey.value());
 }
 
 void Chttrans::syncToConfig() {
@@ -265,9 +266,9 @@ const Configuration *Chttrans::getConfig() const {
     std::vector<std::pair<std::string, std::string>> profiles{
         {"default", _("Default")}};
     constexpr std::string_view JsonSuffix = ".json";
-    auto files =
-        openCCStandardPath().locate(StandardPath::Type::PkgData, ".",
-                                    filter::Suffix(std::string(JsonSuffix)));
+    auto files = openCCStandardPath().locate(
+        StandardPathsType::PkgData, ".",
+        pathfilter::extension(std::string(JsonSuffix)));
     profiles.reserve(files.size() + 1);
     // files is std::map, so file name is already sorted.
     for (const auto &file : files) {
@@ -278,10 +279,9 @@ const Configuration *Chttrans::getConfig() const {
             auto jv = boost::json::parse(strBuf);
             const auto &obj = jv.as_object();
             auto name = boost::json::value_to<std::string>(obj.at("name"));
-            std::string description =
-                file.first.substr(0, file.first.size() - JsonSuffix.size());
+            std::string description = file.first.stem();
             if (!name.empty()) {
-                description = fmt::format("{0}: {1}", description,
+                description = std::format("{0}: {1}", description,
                                           C_("OpenCC Profile", name));
             }
             profiles.emplace_back(file.first, std::move(description));
@@ -328,7 +328,7 @@ ChttransIMType Chttrans::convertType(fcitx::InputContext *inputContext) const {
 
     const auto *entry = instance_->inputMethodEntry(inputContext);
     assert(entry);
-    if (!enabledIM_.count(entry->uniqueName())) {
+    if (!enabledIM_.contains(entry->uniqueName())) {
         return ChttransIMType::Other;
     }
 
@@ -344,7 +344,7 @@ ChttransIMType Chttrans::currentType(fcitx::InputContext *inputContext) const {
 
     const auto *entry = instance_->inputMethodEntry(inputContext);
     assert(entry);
-    if (!enabledIM_.count(entry->uniqueName())) {
+    if (!enabledIM_.contains(entry->uniqueName())) {
         return type;
     }
 
@@ -359,4 +359,4 @@ class ChttransModuleFactory : public AddonFactory {
     }
 };
 
-FCITX_ADDON_FACTORY(ChttransModuleFactory)
+FCITX_ADDON_FACTORY_V2(chttrans, ChttransModuleFactory)

@@ -3,12 +3,12 @@ Name=Punctuation
 Category=Module
 Version=@PROJECT_VERSION@
 Library=libpunctuation
-Type=SharedLibrary
+Type=@FCITX_ADDON_TYPE@
 OnDemand=True
 Configurable=True
 
 [Addon/Dependencies]
-0=core:5.0.6
+0=core:@REQUIRED_FCITX_VERSION@
 
 [Addon/OptionalDependencies]
 0=notifications
