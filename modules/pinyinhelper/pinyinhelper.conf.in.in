@@ -3,8 +3,11 @@ Name=Extra Pinyin functionality
 Category=Module
 Version=@PROJECT_VERSION@
 Library=libpinyinhelper
-Type=SharedLibrary
+Type=@FCITX_ADDON_TYPE@
 OnDemand=False
+
+[Addon/Dependencies]
+0=core:@REQUIRED_FCITX_VERSION@
 
 [Addon/OptionalDependencies]
 0=quickphrase

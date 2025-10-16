@@ -5,62 +5,152 @@
  *
  */
 
+#include <algorithm>
+#include <array>
 #include <codecvt>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#if defined(__linux__) || defined(__GLIBC__)
-#include <endian.h>
-#elif defined(__APPLE__)
-#include <libkern/OSByteOrder.h>
-#define le16toh(x) OSSwapLittleToHostInt16(x)
-#else
-#include <sys/endian.h>
-#endif
+#include <exception>
+#include <fcitx-utils/fdstreambuf.h>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/unixfd.h>
 #include <fcntl.h>
+#include <format>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
+#include <iostream>
+#include <istream>
 #include <locale>
+#include <optional>
+#include <ostream>
+#include <ranges>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <sys/types.h>
+#include <type_traits>
 #include <unistd.h>
+#include <utility>
+#include <vector>
+
+#if defined(__linux__) || defined(__GLIBC__)
+#include <endian.h>
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#define le16toh(x) OSSwapLittleToHostInt16(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+#else
+#include <sys/endian.h>
+#endif
 
 using namespace fcitx;
 
-#define HEADER_SIZE 12
-#define DELTBL_SIZE 8
-#define BUFLEN 0x1000
+// SCEL file format
+//
+// Common data structure
+// 2 byte of bytes length, and data, we will refer this as bytearray.
+//
+// 12bytes Header
+// 0x5C 4byte Num Phrase
+// 0x60 4byte Phrase Offset
+// 0x74 4byte num del table
+// 0x78 4byte del table offset
+// 0x120 num entries
+// 0x130-0x338 description
+// 0x338-0x540 source
+// 0x540-0xD40 long description
+// 0xD40-0x1540 example
+// 0x1540 Pinyin index table, may be empty, but still has pinyin size.
+//  4 bytes num pinyin
+//  2 byte index
+//  bytearray pinyin string
+// Regular data
+// num entries
+// 2 byte num words
+// bytearray pinyin index
+// [
+//   bytearray word
+//   bytearray unused data
+// ]
+// Phase Offset
+// [
+//    17 bytes of data
+//    bytearray of pinyin / string
+//    bytearray of word
+// ]
+// DEL table (uncommon)
+// At del table offset, or starts with "DELTBL" in utf16
+// num of entry
+// [word length in character, word]
 
-#define DESC_START 0x130
-#define DESC_LENGTH (0x338 - 0x130)
+namespace {
 
-#define LDESC_LENGTH (0x540 - 0x338)
-#define NEXT_LENGTH (0x1540 - 0x540)
+constexpr std::array header = {
+    std::to_array<uint8_t>({0x40, 0x15, 0x00, 0x00, 0x44, 0x43, 0x53, 0x01,
+                            0x01, 0x00, 0x00, 0x00}),
+    std::to_array<uint8_t>({0x40, 0x15, 0x00, 0x00, 0x45, 0x43, 0x53, 0x01,
+                            0x01, 0x00, 0x00, 0x00}),
+    std::to_array<uint8_t>({0x40, 0x15, 0x00, 0x00, 0xd2, 0x6d, 0x53, 0x01,
+                            0x01, 0x00, 0x00, 0x00})};
+constexpr std::array deltbl = std::to_array<uint8_t>(
+    {0x44, 0x00, 0x45, 0x00, 0x4c, 0x00, 0x54, 0x00, 0x42, 0x00, 0x4c, 0x00});
 
-#define PINYIN_SIZE 4
+constexpr size_t PHRASE_OFFSET = 0x5C;
+constexpr size_t DELTBL_OFFSET = 0x74;
+constexpr size_t ENTRY_OFFSET = 0x120;
+constexpr size_t DESC_OFFSET = 0x130;
+constexpr size_t SOURCE_OFFSET = 0x338;
+constexpr size_t LONG_DESC_OFFSET = 0x540;
+constexpr size_t EXAMPLE_OFFSET = 0xd40;
+constexpr size_t PINYIN_OFFSET = 0x1540;
 
 template <typename T>
-void readOrAbort(const UnixFD &fd, T *value, int n,
-                 const char *error = nullptr) {
-    if (fs::safeRead(fd.fd(), value, n * sizeof(T)) !=
-        static_cast<int>(n * sizeof(T))) {
-        if (error) {
-            FCITX_FATAL() << error;
-        } else {
-            exit(0);
-        }
+void readOrAbort(std::istream &in, T *value, int n, const char *error) {
+    if (!in.read(reinterpret_cast<char *>(value), n * sizeof(T))) {
+        throw std::runtime_error(
+            std::format("Read error: {}, current offset: {}", error,
+                        std::streamoff(in.tellg())));
     }
 }
-
 template <typename T>
-void readOrAbort(const UnixFD &fd, T *value, const char *error = nullptr) {
-    return readOrAbort(fd, value, 1, error);
+void readOrAbort(std::istream &in, T *value, const char *error) {
+    readOrAbort(in, value, 1, error);
 }
 
-void readUInt16(const UnixFD &fd, uint16_t *value,
-                const char *error = nullptr) {
-    readOrAbort(fd, value, error);
+template <typename T>
+void readFixedBuffer(std::istream &in, T *value, const char *error) {
+    readOrAbort(in, value->data(), value->size(), error);
+}
+
+void readUInt16(std::istream &in, uint16_t *value, const char *error) {
+    readOrAbort(in, value, error);
     *value = le16toh(*value);
+}
+
+void readUInt32(std::istream &in, uint32_t *value, const char *error) {
+    readOrAbort(in, value, error);
+    *value = le32toh(*value);
+}
+
+template <typename T>
+    requires(sizeof(typename T::value_type) == 2)
+void readByteArray(std::istream &in, T *value, const char *error) {
+    uint16_t size;
+    readUInt16(in, &size, error);
+    if (size % 2 != 0) {
+        throw std::runtime_error(
+            std::format("Invalid size of byte array {}: {}", size, error));
+    }
+    for (size_t i = 0; i < size; i += 2) {
+        uint16_t data;
+        readUInt16(in, &data, error);
+        value->push_back(le16toh(data));
+    }
 }
 
 std::string unicodeToUTF8(const char16_t *value, size_t size) {
@@ -68,8 +158,11 @@ std::string unicodeToUTF8(const char16_t *value, size_t size) {
         .to_bytes(value, value + size);
 }
 
-std::string unicodeToUTF8(const char *value, size_t size) {
-    FCITX_ASSERT(size % 2 == 0) << "Invalid size of string";
+std::string unicodeToUTF8(const uint8_t *value, size_t size) {
+    if (size % 2 != 0) {
+        throw std::runtime_error(
+            std::format("Invalid size of string {}", size));
+    }
     const auto *ustr = reinterpret_cast<const uint16_t *>(value);
     std::u16string str;
     str.reserve(size / 2);
@@ -80,42 +173,338 @@ std::string unicodeToUTF8(const char *value, size_t size) {
         }
         str.push_back(le16toh(ustr[i]));
     }
-
     return unicodeToUTF8(str.data(), str.size());
 }
 
-static const char header_str[HEADER_SIZE] = {'\x40', '\x15', '\0',   '\0',
-                                             '\x44', '\x43', '\x53', '\x01',
-                                             '\x01', '\0',   '\0',   '\0'};
-static const char pinyin_str[PINYIN_SIZE] = {'\x9d', '\x01', '\0', '\0'};
-static const char deltbl_str[DELTBL_SIZE] = {'\x4c', '\0', '\x54', '\0',
-                                             '\x42', '\0', '\x4c', '\0'};
-
-static void usage() {
-    puts(
-        "scel2org - Convert .scel file to libime compatible file (SEE NOTES "
-        "BELOW)\n"
-        "\n"
-        "  usage: scel2org [OPTION] [scel file]\n"
-        "\n"
-        "  -o <file>  specify the output file, if not specified, the output "
-        "will\n"
-        "             be stdout.\n"
-        "  -t         specify the output to be in format of extra table dict.\n"
-        "  -h         display this help.\n"
-        "\n"
-        "NOTES:\n"
-        "   Always check the produced output for errors.\n");
-    exit(1);
+template <typename T>
+    requires std::is_same_v<typename T::value_type, uint8_t>
+std::string unicodeToUTF8(const T &value) {
+    return unicodeToUTF8(value.data(), value.size());
 }
 
-int main(int argc, char **argv) {
-    int c;
-    const char *outputFile = nullptr;
+void readString(std::istream &in, std::string *out, const char *error) {
+    std::u16string ustr;
+    readByteArray(in, &ustr, error);
+    *out = unicodeToUTF8(ustr.data(), ustr.size());
+}
+
+std::string indexPinyin(uint32_t index, const std::vector<std::string> &vec) {
+    if (index < vec.size()) {
+        return vec[index];
+    }
+
+    throw std::runtime_error(std::format("Invalid pinyin index {}", index));
+}
+
+// There is a special 482 index equals "#", but we don't support "#" anyway.
+// And we only want to guess how 482 is mapped to "#".
+constexpr std::array<std::string_view, 449> defaultPinyins = {
+    "a",     "ai",     "an",     "ang",   "ao",     "ba",    "bai",   "ban",
+    "bang",  "bao",    "bei",    "ben",   "beng",   "bi",    "bian",  "biao",
+    "bie",   "bin",    "bing",   "bo",    "bu",     "ca",    "cai",   "can",
+    "cang",  "cao",    "ce",     "cen",   "ceng",   "cha",   "chai",  "chan",
+    "chang", "chao",   "che",    "chen",  "cheng",  "chi",   "chong", "chou",
+    "chu",   "chua",   "chuai",  "chuan", "chuang", "chui",  "chun",  "chuo",
+    "ci",    "cong",   "cou",    "cu",    "cuan",   "cui",   "cun",   "cuo",
+    "da",    "dai",    "dan",    "dang",  "dao",    "de",    "dei",   "den",
+    "deng",  "di",     "dia",    "dian",  "diao",   "die",   "ding",  "diu",
+    "dong",  "dou",    "du",     "duan",  "dui",    "dun",   "duo",   "e",
+    "ei",    "en",     "eng",    "er",    "fa",     "fan",   "fang",  "fei",
+    "fen",   "feng",   "fiao",   "fo",    "fou",    "fu",    "ga",    "gai",
+    "gan",   "gang",   "gao",    "ge",    "gei",    "gen",   "geng",  "gong",
+    "gou",   "gu",     "gua",    "guai",  "guan",   "guang", "gui",   "gun",
+    "guo",   "ha",     "hai",    "han",   "hang",   "hao",   "he",    "hei",
+    "hen",   "heng",   "hong",   "hou",   "hu",     "hua",   "huai",  "huan",
+    "huang", "hui",    "hun",    "huo",   "ji",     "jia",   "jian",  "jiang",
+    "jiao",  "jie",    "jin",    "jing",  "jiong",  "jiu",   "ju",    "juan",
+    "jue",   "jun",    "ka",     "kai",   "kan",    "kang",  "kao",   "ke",
+    "kei",   "ken",    "keng",   "kong",  "kou",    "ku",    "kua",   "kuai",
+    "kuan",  "kuang",  "kui",    "kun",   "kuo",    "la",    "lai",   "lan",
+    "lang",  "lao",    "le",     "lei",   "leng",   "li",    "lia",   "lian",
+    "liang", "liao",   "lie",    "lin",   "ling",   "liu",   "lo",    "long",
+    "lou",   "lu",     "luan",   "lve",   "lun",    "luo",   "lv",    "ma",
+    "mai",   "man",    "mang",   "mao",   "me",     "mei",   "men",   "meng",
+    "mi",    "mian",   "miao",   "mie",   "min",    "ming",  "miu",   "mo",
+    "mou",   "mu",     "na",     "nai",   "nan",    "nang",  "nao",   "ne",
+    "nei",   "nen",    "neng",   "ni",    "nian",   "niang", "niao",  "nie",
+    "nin",   "ning",   "niu",    "nong",  "nou",    "nu",    "nuan",  "nve",
+    "nun",   "nuo",    "nv",     "o",     "ou",     "pa",    "pai",   "pan",
+    "pang",  "pao",    "pei",    "pen",   "peng",   "pi",    "pian",  "piao",
+    "pie",   "pin",    "ping",   "po",    "pou",    "pu",    "qi",    "qia",
+    "qian",  "qiang",  "qiao",   "qie",   "qin",    "qing",  "qiong", "qiu",
+    "qu",    "quan",   "que",    "qun",   "ran",    "rang",  "rao",   "re",
+    "ren",   "reng",   "ri",     "rong",  "rou",    "ru",    "rua",   "ruan",
+    "rui",   "run",    "ruo",    "sa",    "sai",    "san",   "sang",  "sao",
+    "se",    "sen",    "seng",   "sha",   "shai",   "shan",  "shang", "shao",
+    "she",   "shei",   "shen",   "sheng", "shi",    "shou",  "shu",   "shua",
+    "shuai", "shuan",  "shuang", "shui",  "shun",   "shuo",  "si",    "song",
+    "sou",   "su",     "suan",   "sui",   "sun",    "suo",   "ta",    "tai",
+    "tan",   "tang",   "tao",    "te",    "tei",    "teng",  "ti",    "tian",
+    "tiao",  "tie",    "ting",   "tong",  "tou",    "tu",    "tuan",  "tui",
+    "tun",   "tuo",    "wa",     "wai",   "wan",    "wang",  "wei",   "wen",
+    "weng",  "wo",     "wu",     "xi",    "xia",    "xian",  "xiang", "xiao",
+    "xie",   "xin",    "xing",   "xiong", "xiu",    "xu",    "xuan",  "xue",
+    "xun",   "ya",     "yan",    "yang",  "yao",    "ye",    "yi",    "yin",
+    "ying",  "yo",     "yong",   "you",   "yu",     "yuan",  "yue",   "yun",
+    "za",    "zai",    "zan",    "zang",  "zao",    "ze",    "zei",   "zen",
+    "zeng",  "zha",    "zhai",   "zhan",  "zhang",  "zhao",  "zhe",   "zhei",
+    "zhen",  "zheng",  "zhi",    "zhong", "zhou",   "zhu",   "zhua",  "zhuai",
+    "zhuan", "zhuang", "zhui",   "zhun",  "zhuo",   "zi",    "zong",  "zou",
+    "zu",    "zuan",   "zui",    "zun",   "zuo",    "A",     "B",     "C",
+    "D",     "E",      "F",      "G",     "H",      "I",     "J",     "K",
+    "L",     "M",      "N",      "O",     "P",      "Q",     "R",     "S",
+    "T",     "U",      "V",      "W",     "X",      "Y",     "Z",     "0",
+    "1",     "2",      "3",      "4",     "5",      "6",     "7",     "8",
+    "9"};
+
+void usage(std::ostream &out) {
+    out << "scel2org - Convert .scel file to libime compatible file (SEE NOTES "
+           "BELOW)\n"
+           "\n"
+           "  usage: scel2org [OPTION] [scel file]\n"
+           "\n"
+           "  -o <file>  specify the output file, if not specified, the output "
+           "will\n"
+           "             be stdout.\n"
+           "  -t         specify the output to be in format of extra table "
+           "dict.\n"
+           "  -a         Print non pinyin words.\n"
+           "  -h         display this help.\n"
+           "\n"
+           "NOTES:\n"
+           "   Always check the produced output for errors.\n";
+}
+
+struct ScelOption {
+    bool printAll = false;
     bool printDel = false;
     bool table = false;
 
-    while ((c = getopt(argc, argv, "o:hdt")) != -1) {
+    std::ostream &out;
+
+    uint32_t phraseCount = 0;
+    uint32_t phraseOffset = 0;
+    uint32_t delTblCount = 0;
+    uint32_t delTblOffset = 0;
+    uint32_t entryCount = 0;
+    std::vector<std::string> pinyinIndex;
+};
+
+void readMetadata(std::istream &in, ScelOption &options) {
+    if (!in.seekg(0, std::ios::beg)) {
+        throw std::runtime_error("Failed to seek to begin");
+    }
+    decltype(header)::value_type headerBuf;
+    readFixedBuffer(in, &headerBuf, "Failed to read header");
+    if (!std::ranges::any_of(
+            header, std::bind_front(std::equal_to<decltype(headerBuf)>(),
+                                    std::cref(headerBuf)))) {
+        throw std::runtime_error("Invalid header");
+    }
+
+    if (!in.seekg(PHRASE_OFFSET, std::ios::beg)) {
+        throw std::runtime_error("Failed to seek to phrase offset");
+    }
+    readUInt32(in, &options.phraseCount, "Failed to read phrase count");
+    readUInt32(in, &options.phraseOffset, "Failed to read phrase offset");
+
+    if (!in.seekg(DELTBL_OFFSET, std::ios::beg)) {
+        throw std::runtime_error("Failed to seek to deltbl offset");
+    }
+    readUInt32(in, &options.delTblCount, "Failed to read delete table count");
+    readUInt32(in, &options.delTblOffset, "Failed to read delete table offset");
+
+    if (!in.seekg(ENTRY_OFFSET, std::ios::beg)) {
+        throw std::runtime_error("Failed to seek to entry offset");
+    }
+    readUInt32(in, &options.entryCount, "Failed to read entry count");
+
+    if (!in.seekg(DESC_OFFSET, std::ios::beg)) {
+        throw std::runtime_error("Failed to seek to description offset");
+    }
+
+    std::array<uint8_t, SOURCE_OFFSET - DESC_OFFSET> descBuf;
+    readFixedBuffer(in, &descBuf, "Failed to read description");
+
+    std::array<uint8_t, LONG_DESC_OFFSET - SOURCE_OFFSET> exampleBuf;
+    readFixedBuffer(in, &exampleBuf, "Failed to read source description");
+
+    std::array<uint8_t, EXAMPLE_OFFSET - LONG_DESC_OFFSET> longDescBuf;
+    readFixedBuffer(in, &longDescBuf, "Failed to read long description");
+
+    std::array<uint8_t, PINYIN_OFFSET - EXAMPLE_OFFSET> nextBuf;
+    readFixedBuffer(in, &nextBuf, "Failed to read example words");
+
+    std::cerr << "DESC:" << unicodeToUTF8(descBuf) << '\n';
+    std::cerr << "SOURCE:" << unicodeToUTF8(exampleBuf) << '\n';
+    std::cerr << "LONGDESC:" << unicodeToUTF8(longDescBuf) << '\n';
+    std::cerr << "EXAMPLE:" << unicodeToUTF8(nextBuf) << '\n';
+}
+
+void readPinyinIndex(std::istream &in, ScelOption &options) {
+    uint32_t pyCount;
+    readUInt32(in, &pyCount, "Failed to read py count");
+
+    std::vector<std::string> pys;
+    for (uint32_t i = 0; i < pyCount; i++) {
+        uint16_t index;
+        readUInt16(in, &index, "Failed to read index");
+
+        std::string py;
+        readString(in, &py, "Failed to read py");
+
+        // Replace ue with ve
+        if (py == "lue" || py == "nue") {
+            py[py.size() - 2] = 'v';
+        }
+        pys.push_back(py);
+    }
+    if (pys.size() == 0) {
+        pys.assign(std::begin(defaultPinyins), std::end(defaultPinyins));
+    }
+    options.pinyinIndex = std::move(pys);
+}
+
+void readEntries(std::istream &in, const ScelOption &options) {
+    if (options.table) {
+        options.out << "[Phrase]\n";
+    }
+
+    for (uint32_t ec = 0; ec < options.entryCount; ec++) {
+        uint16_t symCount;
+        readUInt16(in, &symCount, "Failed to read sym count");
+
+        std::vector<uint16_t> pyindex;
+        readByteArray(in, &pyindex, "Failed to read pyindex");
+
+        for (uint16_t s = 0; s < symCount; s++) {
+            std::string bufout;
+            readString(in, &bufout, "Failed to read text");
+
+            if (!pyindex.empty()) {
+                if (options.table) {
+                    options.out << bufout << '\n';
+                } else {
+                    std::string pinyin;
+                    try {
+                        pinyin = stringutils::join(
+                            pyindex | std::views::transform(
+                                          [&options](uint16_t index) {
+                                              return indexPinyin(
+                                                  index, options.pinyinIndex);
+                                          }),
+                            "\'");
+                    } catch (const std::exception &e) {
+                        FCITX_ERROR()
+                            << "Failed to convert pinyin: " << e.what()
+                            << ", word: " << bufout;
+                        continue;
+                    }
+                    options.out << bufout << "\t" << pinyin << "\t0\n";
+                }
+            }
+
+            std::vector<uint16_t> buffer;
+            readByteArray(in, &buffer, "failed to read buf");
+        }
+    }
+}
+
+void readPhrases(std::istream &in, const ScelOption &options) {
+    if (options.phraseCount > 0) {
+        if (!in.seekg(options.phraseOffset, std::ios::beg)) {
+            throw std::runtime_error(std::format("Failed to seek to phrase"));
+        }
+    }
+    for (uint32_t i = 0; i < options.phraseCount; i++) {
+        char info[17];
+        readOrAbort(in, info, 17, "Failed to read buf");
+
+        std::string code;
+        if (info[2] == 0x1) {
+            std::vector<uint16_t> pyindex;
+            readByteArray(in, &pyindex, "Failed to read pyindex");
+            std::string bufout;
+            readString(in, &bufout, "Failed to read text");
+            if (!pyindex.empty()) {
+                try {
+                    code = stringutils::join(
+                        pyindex |
+                            std::views::transform([&options](uint16_t index) {
+                                return indexPinyin(index, options.pinyinIndex);
+                            }),
+                        "\'");
+                } catch (const std::exception &e) {
+                    FCITX_ERROR() << "Failed to convert pinyin: " << e.what()
+                                  << ", word: " << bufout;
+                    continue;
+                }
+
+                if (options.table) {
+                    options.out << bufout << '\n';
+                } else {
+                    options.out << bufout << "\t" << code << "\t0\n";
+                }
+            }
+        } else {
+            readString(in, &code, "Failed to read code");
+            std::string bufout;
+            readString(in, &bufout, "Failed to read text");
+
+            if (options.printAll) {
+                if (options.table) {
+                    options.out << bufout << '\n';
+                } else {
+                    options.out << bufout << "\t" << code << "\t0\n";
+                }
+            }
+        }
+    }
+}
+
+void readDelTable(std::istream &in, const ScelOption &options) {
+    if (!options.printDel) {
+        return;
+    }
+    uint32_t delTblCount;
+    if (options.delTblCount > 0) {
+        if (!in.seekg(options.delTblOffset, std::ios::beg)) {
+            throw std::runtime_error(
+                std::format("Failed to seek to deltbl offset"));
+        }
+        delTblCount = options.delTblCount;
+    } else {
+        std::remove_const_t<decltype(deltbl)> delTblBuf{};
+        in.read(reinterpret_cast<char *>(delTblBuf.data()), delTblBuf.size());
+        if (!in || delTblBuf != deltbl) {
+            return;
+        }
+        uint16_t delTblCount16;
+        readUInt16(in, &delTblCount16, "Failed to read deltbl count");
+        delTblCount = delTblCount16;
+    }
+    for (uint32_t i = 0; i < delTblCount; i++) {
+        uint16_t count;
+        readUInt16(in, &count, "Failed to read deltbl word count");
+        count *= 2;
+        std::vector<uint8_t> buf;
+        buf.resize(count);
+        readFixedBuffer(in, &buf, "Failed to read deltbl word");
+        std::string bufout = unicodeToUTF8(buf);
+        std::cerr << "DEL:" << bufout << "\n";
+    }
+}
+
+} // namespace
+
+int main(int argc, char **argv) {
+    int c;
+    std::optional<std::string_view> outputFile;
+    bool printDel = false;
+    bool table = false;
+    bool printAll = false;
+
+    while ((c = getopt(argc, argv, "o:hdta")) != -1) {
         switch (c) {
         case 'o':
             outputFile = optarg;
@@ -126,24 +515,29 @@ int main(int argc, char **argv) {
         case 't':
             table = true;
             break;
-        case 'h':
-        default:
-            usage();
+        case 'a':
+            printAll = true;
             break;
+        case 'h':
+            usage(std::cout);
+            return 0;
+        default:
+            usage(std::cerr);
+            return 1;
         }
     }
 
     std::ofstream fout;
-    std::ostream *out;
-    if (!outputFile || strcmp(outputFile, "-") == 0) {
-        out = &std::cout;
+    std::ostream *pout;
+    if (!outputFile.has_value() || outputFile == "-") {
+        pout = &std::cout;
     } else {
-        fout.open(outputFile, std::ios::out | std::ios::binary);
-        out = &fout;
+        fout.open(std::string(*outputFile), std::ios::out | std::ios::binary);
+        pout = &fout;
     }
 
     if (optind >= argc) {
-        usage();
+        usage(std::cerr);
         return 1;
     }
 
@@ -153,143 +547,26 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char headerBuf[HEADER_SIZE];
-    readOrAbort(fd, headerBuf, HEADER_SIZE, "Failed to read header");
-    FCITX_ASSERT(memcmp(headerBuf, header_str, HEADER_SIZE) == 0)
-        << " format error.";
+    IFDStreamBuf fdStreamBuf(std::move(fd));
+    std::istream in(&fdStreamBuf);
 
-    FCITX_ASSERT(lseek(fd.fd(), DESC_START, SEEK_SET) !=
-                 static_cast<off_t>(-1));
+    ScelOption options{
+        .printAll = printAll,
+        .printDel = printDel,
+        .table = table,
+        .out = *pout,
+        .pinyinIndex = {},
+    };
 
-    char descBuf[DESC_LENGTH];
-    readOrAbort(fd, descBuf, DESC_LENGTH, "Failed to read description");
-    std::cerr << "DESC:" << unicodeToUTF8(descBuf, DESC_LENGTH) << std::endl;
-
-    char ldescBuf[LDESC_LENGTH];
-    readOrAbort(fd, ldescBuf, LDESC_LENGTH, "Failed to read long description");
-    std::cerr << "LDESC:" << unicodeToUTF8(ldescBuf, LDESC_LENGTH) << std::endl;
-
-    char nextBuf[NEXT_LENGTH];
-    readOrAbort(fd, nextBuf, NEXT_LENGTH, "Failed to read next description");
-    std::cerr << "NEXT:" << unicodeToUTF8(nextBuf, NEXT_LENGTH) << std::endl;
-
-    char pyBuf[PINYIN_SIZE];
-    readOrAbort(fd, pyBuf, PINYIN_SIZE, "Failed to read py");
-    FCITX_ASSERT(memcmp(pyBuf, pinyin_str, PINYIN_SIZE) == 0);
-
-    std::vector<std::string> pys;
-
-    while (true) {
-        uint16_t index;
-        uint16_t count;
-        readUInt16(fd, &index, "failed to read index");
-        readUInt16(fd, &count, "failed to read pinyin count");
-
-        std::vector<char> buf;
-        buf.resize(count);
-
-        readOrAbort(fd, buf.data(), count, "Failed to read py");
-
-        std::string py = unicodeToUTF8(buf.data(), buf.size());
-
-        // Replace ue with ve
-        if (py == "lue" || py == "nue") {
-            py[py.size() - 2] = 'v';
-        }
-        pys.push_back(py);
-
-        if (py == "zuo") {
-            break;
-        }
-    }
-
-    if (table) {
-        *out << "[Phrase]" << std::endl;
-    }
-
-    bool mightBeDelTbl = false;
-    while (true) {
-        uint16_t symcount;
-        uint16_t count;
-        uint16_t wordcount;
-        readUInt16(fd, &symcount);
-
-        // Just in case we read a invalid value.
-        if (symcount > 128) {
-            FCITX_ERROR() << "Error at offset: " << lseek(fd.fd(), 0, SEEK_CUR);
-            break;
-        }
-
-        readUInt16(fd, &count, "Failed to read count");
-
-        if (symcount == 0x44 && count == 0x45) {
-            mightBeDelTbl = true;
-            break;
-        }
-
-        wordcount = count / 2;
-        std::vector<uint16_t> pyindex;
-        pyindex.resize(wordcount);
-
-        for (uint16_t i = 0; i < wordcount; i++) {
-            readUInt16(fd, &pyindex[i], "Failed to read pyindex");
-            if (pyindex[i] >= pys.size()) {
-                FCITX_FATAL() << "Invalid pinyin index";
-            }
-        }
-
-        for (uint16_t s = 0; s < symcount; s++) {
-            std::vector<char> buf;
-            readUInt16(fd, &count, "Failed to read count");
-            buf.resize(count);
-            readOrAbort(fd, buf.data(), count, "Failed to read text");
-            std::string bufout = unicodeToUTF8(buf.data(), buf.size());
-
-            if (wordcount > 0) {
-                if (table) {
-                    *out << bufout << std::endl;
-                } else {
-                    *out << bufout << "\t";
-                    *out << pys[pyindex[0]];
-                    for (auto i = 1; i < wordcount; i++) {
-                        *out << '\'' << pys[pyindex[i]];
-                    }
-
-                    *out << "\t0" << std::endl;
-                }
-            }
-
-            readUInt16(fd, &count, "failed to read count");
-            buf.resize(count);
-            readOrAbort(fd, buf.data(), buf.size(), "failed to read buf");
-        }
-    }
-
-    if (!mightBeDelTbl) {
-        return 0;
-    }
-
-    char delTblBuf[DELTBL_SIZE];
-    if (fs::safeRead(fd.fd(), delTblBuf, DELTBL_SIZE) != DELTBL_SIZE ||
-        memcmp(delTblBuf, deltbl_str, DELTBL_SIZE) != 0) {
-        return 0;
-    }
-
-    if (!printDel) {
-        return 0;
-    }
-
-    uint16_t delTblCount;
-    readUInt16(fd, &delTblCount);
-    for (int i = 0; i < delTblCount; i++) {
-        uint16_t count;
-        readUInt16(fd, &count);
-        count *= 2;
-        std::vector<char> buf;
-        buf.resize(count);
-        readOrAbort(fd, buf.data(), count, "Failed to read text");
-        std::string bufout = unicodeToUTF8(buf.data(), buf.size());
-        std::cerr << "DEL:" << bufout << std::endl;
+    try {
+        readMetadata(in, options);
+        readPinyinIndex(in, options);
+        readEntries(in, options);
+        readPhrases(in, options);
+        readDelTable(in, options);
+    } catch (const std::exception &e) {
+        FCITX_ERROR() << e.what();
+        return 1;
     }
 
     return 0;

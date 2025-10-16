@@ -8,14 +8,13 @@
 #define _PINYINDICTMANAGER_BROWSERDIALOG_H_
 
 #include "config.h"
-#ifdef USE_WEBKIT
-#include "ui_browserdialog_webkit.h"
-#else
 #include "ui_browserdialog.h"
-#endif
+#include <QByteArray>
 #include <QDialog>
 #include <QMessageBox>
+#include <QString>
 #include <QUrl>
+#include <QWidget>
 
 namespace fcitx {
 

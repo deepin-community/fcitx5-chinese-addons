@@ -18,17 +18,17 @@
 #include <fcitx-config/option.h>
 #include <fcitx-config/rawconfig.h>
 #include <fcitx-utils/event.h>
+#include <fcitx-utils/eventloopinterface.h>
 #include <fcitx-utils/handlertable.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/inputbuffer.h>
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
-#include <fcitx-utils/keysymgen.h>
 #include <fcitx-utils/misc.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/trackableobject.h>
+#include <fcitx-utils/unixfd.h>
 #include <fcitx/action.h>
-#include <fcitx/addonfactory.h>
 #include <fcitx/addoninstance.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/event.h>
@@ -37,16 +37,17 @@
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
 #include <fcitx/text.h>
+#include <filesystem>
+#include <future>
 #include <libime/pinyin/pinyincontext.h>
 #include <libime/pinyin/pinyinime.h>
 #include <libime/pinyin/pinyinprediction.h>
 #include <list>
 #include <memory>
 #include <optional>
+#include <regex>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -127,6 +128,7 @@ FCITX_CONFIGURATION(
     Option<bool> c{this, "C_CH", _("c <-> ch"), false};
     Option<bool> f{this, "F_H", _("f <-> h"), false};
     Option<bool> l{this, "L_N", _("l <-> n"), false};
+    Option<bool> r{this, "L_R", _("l <-> r"), false};
     Option<bool> s{this, "S_SH", _("s <-> sh"), false};
     Option<bool> z{this, "Z_ZH", _("z <-> zh"), false};
     OptionWithAnnotation<CorrectionLayout, CorrectionLayoutI18NAnnotation>
@@ -149,9 +151,15 @@ FCITX_CONFIGURATION(
     Option<bool> symbolsEnabled{this, "SymbolsEnabled", _("Enable Symbols"),
                                 true};
     Option<bool> chaiziEnabled{this, "ChaiziEnabled", _("Enable Chaizi"), true};
-    Option<bool> extBEnabled{this, "ExtBEnabled",
-                             _("Enable Characters in Unicode CJK Extension B"),
-                             !isAndroid()};
+    Option<bool> extBEnabled{
+        this, "ExtBEnabled",
+        _("Enable more Characters after Unicode CJK Extension B"),
+        !isAndroid()};
+    Option<bool> strokeCandidateEnabled{
+        this, "StrokeCandidateEnabled",
+        _("Show stroke candidates when typing with h(一), s(丨), p(丿), n(㇏), "
+          "z(𠃍)"),
+        true};
     OptionalHiddenSubConfigOption cloudpinyin{
         this, "CloudPinyin", _("Cloud Pinyin"),
         "fcitx://config/addon/cloudpinyin"};
@@ -173,7 +181,7 @@ FCITX_CONFIGURATION(
     Option<bool> preeditCursorPositionAtBeginning{
         this, "PreeditCursorPositionAtBeginning",
         _("Fix embedded preedit cursor at the beginning of the preedit"),
-        !isAndroid() && !isApple()};
+        !isAndroid() && !isApple() && !isEmscripten()};
     Option<bool> showActualPinyinInPreedit{
         this, "PinyinInPreedit", _("Show complete pinyin in preedit"), false};
     Option<bool> predictionEnabled{this, "Prediction", _("Enable Prediction"),
@@ -289,15 +297,16 @@ FCITX_CONFIGURATION(
     ExternalOption quickphrase{this, "QuickPhrase", _("Quick Phrase"),
                                "fcitx://config/addon/quickphrase/editor"};
     OptionWithAnnotation<std::vector<std::string>, ToolTipAnnotation>
-        quickphraseTrigger{this,
-                           "QuickPhrase trigger",
-                           _("Strings to trigger quick phrase"),
-                           {"www.", "ftp.", "http:", "mail.", "bbs.", "forum.",
-                            "https:", "ftp:", "telnet:", "mailto:"},
-                           {},
-                           {},
-                           {_("Enter a string from the list will make it enter "
-                              "quickphrase mode.")}};
+        quickphraseTriggerRegex{
+            this,
+            "QuickPhraseTriggerRegex",
+            _("Regular expression to trigger quick phrase"),
+            {".(/|@)$", "^(www|bbs|forum|mail|bbs)\\.",
+             "^(http|https|ftp|telnet|mailto):"},
+            {},
+            {},
+            {_("Enter quickphrase mode when current input matches any regular "
+               "expression from the list.")}};
     Option<FuzzyConfig> fuzzyConfig{this, "Fuzzy", _("Fuzzy Pinyin Settings")};
     HiddenOption<bool> firstRun{this, "FirstRun", "FirstRun", true};)
 
@@ -329,6 +338,7 @@ public:
 
     int keyReleased_ = -1;
     int keyReleasedIndex_ = -2;
+    uint64_t lastKeyPressedTime_ = 0;
 };
 
 class PinyinEngine final : public InputMethodEngineV3,
@@ -393,11 +403,14 @@ private:
 
     bool handleCloudpinyinTrigger(KeyEvent &event);
     bool handle2nd3rdSelection(KeyEvent &event);
-    bool handleCandidateList(KeyEvent &event);
+    bool handleCandidateList(KeyEvent &event,
+                             const std::shared_future<uint32_t> &keyChr);
     bool handleNextPage(KeyEvent &event) const;
-    bool handleStrokeFilter(KeyEvent &event);
+    bool handleStrokeFilter(KeyEvent &event,
+                            const std::shared_future<uint32_t> &keyChr);
     bool handleForgetCandidate(KeyEvent &event);
-    bool handlePunc(KeyEvent &event);
+    bool handlePunc(KeyEvent &event,
+                    const std::shared_future<uint32_t> &keyChr);
     bool handlePuncCandidate(KeyEvent &event);
     bool handleCompose(KeyEvent &event);
     void resetPredict(InputContext *inputContext);
@@ -426,7 +439,7 @@ private:
     void loadBuiltInDict();
     void loadExtraDict();
     void loadCustomPhrase();
-    void loadSymbols(const StandardPathFile &file);
+    void loadSymbols(const UnixFD &file);
     void loadDict(const std::string &fullPath,
                   std::list<std::unique_ptr<TaskToken>> &taskTokens);
     void saveCustomPhrase();
@@ -435,8 +448,7 @@ private:
     PinyinEngineConfig config_;
     PinyinEngineConfig pyConfig_;
     std::unique_ptr<libime::PinyinIME> ime_;
-    std::unordered_map<std::string, std::unordered_set<uint32_t>>
-        quickphraseTriggerDict_;
+    std::vector<std::regex> quickphraseTriggerRegex_;
     KeyList selectionKeys_;
     KeyList numpadSelectionKeys_;
     FactoryFor<PinyinState> factory_;
@@ -463,13 +475,6 @@ private:
     static constexpr size_t NumBuiltInDict = 2;
 };
 
-class PinyinEngineFactory : public AddonFactory {
-public:
-    AddonInstance *create(AddonManager *manager) override {
-        registerDomain("fcitx5-chinese-addons", FCITX_INSTALL_LOCALEDIR);
-        return new PinyinEngine(manager->instance());
-    }
-};
 } // namespace fcitx
 
 #endif // _PINYIN_PINYIN_H_

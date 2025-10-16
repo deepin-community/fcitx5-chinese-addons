@@ -15,8 +15,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <fcitx-utils/capabilityflags.h>
 #include <fcitx-utils/event.h>
+#include <fcitx-utils/eventloopinterface.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
@@ -29,8 +31,6 @@
 #include <fcitx/inputpanel.h>
 #include <fcitx/text.h>
 #include <fcitx/userinterface.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
 #include <initializer_list>
 #include <iterator>
 #include <libime/core/historybigram.h>
@@ -173,7 +173,7 @@ void TableState::reset(const InputMethodEntry *entry) {
 
 std::unique_ptr<CandidateList>
 TableState::predictCandidateList(const std::vector<std::string> &words) {
-    if (words.empty()) {
+    if (words.empty() || isComposeTableMode()) {
         return nullptr;
     }
     auto candidateList = std::make_unique<CommonCandidateList>();
@@ -239,14 +239,27 @@ bool TableState::isContextEmpty() const {
     return context_->empty();
 }
 
+bool TableState::isComposeTableMode() const {
+
+    if (!context_) {
+        return false;
+    }
+
+    return *context_->config().pageSize == 0;
+}
+
 bool TableState::autoSelectCandidate() const {
     auto candidateList = ic_->inputPanel().candidateList();
     if (candidateList && !candidateList->empty()) {
-        int idx = candidateList->cursorIndex();
-        if (idx < 0) {
-            idx = 0;
-        }
+        int idx = std::max(candidateList->cursorIndex(), 0);
         candidateList->candidate(idx).select(ic_);
+        return true;
+    }
+    if (isComposeTableMode() && !context_->candidates().empty()) {
+        // Create a dummy candidate word to reuse the logic in
+        // TableCandidateWord::select
+        TableCandidateWord candidate(engine_, Text{}, 0);
+        candidate.select(ic_);
         return true;
     }
     return false;
@@ -390,7 +403,7 @@ bool TableState::handlePinyinMode(KeyEvent &event) {
     auto &inputPanel = ic_->inputPanel();
     ic_->inputPanel().reset();
 
-    if (!pinyinModeBuffer_.empty()) {
+    if (!pinyinModeBuffer_.empty() && !isComposeTableMode()) {
         const auto &dict = engine_->pinyinDict();
         const auto &lm = engine_->pinyinModel();
         auto pinyin = libime::PinyinEncoder::encodeOneUserPinyin(
@@ -659,9 +672,9 @@ bool TableState::handleLookupPinyinOrModifyDictionaryMode(KeyEvent &event) {
                         if (sp.empty()) {
                             text.append(allTones);
                         } else {
-                            text.append(fmt::format(
-                                C_("Pinyin & Shuangpin", "{0} ({1})"), allTones,
-                                stringutils::join(sp, " ")));
+                            text.append(C_("Pinyin & Shuangpin", "{0} ({1})",
+                                           allTones,
+                                           stringutils::join(sp, " ")));
                         }
                     }
                     inputPanel.setAuxDown(Text(std::move(text)));
@@ -675,9 +688,8 @@ bool TableState::handleLookupPinyinOrModifyDictionaryMode(KeyEvent &event) {
                     std::string result;
                     if (context_->dict().generateWithHint(
                             subString.first, subString.second, result)) {
-                        auxDown.append(
-                            fmt::format(_("{0}: {1}"), subString.first,
-                                        context_->customHint(result)));
+                        auxDown.append(_("{0}: {1}", subString.first,
+                                         context_->customHint(result)));
                         auto flag = context_->dict().wordExists(
                             result, subString.first);
                         if (flag == libime::PhraseFlag::Invalid ||
@@ -691,19 +703,17 @@ bool TableState::handleLookupPinyinOrModifyDictionaryMode(KeyEvent &event) {
                             auxUp.append(_("Press Delete to remove."));
                         }
                     } else {
-                        auxDown.append(fmt::format(
-                            _("{0}: No corresponding code."), subString.first));
+                        auxDown.append(
+                            _("{0}: No corresponding code.", subString.first));
                     }
                     auxDown.append(" ");
                 }
                 auto chrString = utf8::UCS4ToUTF8(chr);
                 auto chrCode = context_->dict().reverseLookup(chrString);
                 if (!chrCode.empty()) {
-                    auxDown.append(
-                        fmt::format(_("{0}: {1}"), chrString, chrCode));
+                    auxDown.append(_("{0}: {1}", chrString, chrCode));
                 } else {
-                    auxDown.append(
-                        fmt::format(_("{0} is not in table."), chrString));
+                    auxDown.append(_("{0} is not in table.", chrString));
                 }
                 inputPanel.setAuxUp(auxUp);
                 inputPanel.setAuxDown(auxDown);
@@ -878,7 +888,7 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
                 event.filterAndAccept();
                 maybePredict = true;
             }
-        } else if (!isContextEmpty()) {
+        } else if (!isContextEmpty() && !isComposeTableMode()) {
             if (event.key().check(FcitxKey_Return, KeyState::Shift) ||
                 event.key().check(FcitxKey_KP_Enter, KeyState::Shift)) {
                 // This key is used to type long auto select buffer.
@@ -967,7 +977,7 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
                 // forward the original key is the best choice.
                 cancelLastEvent_ =
                     engine_->instance()->eventLoop().addTimeEvent(
-                        CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + 300, 0,
+                        CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + 3000, 1,
                         [this, ref = inputContext->watch(),
                          puncStr = puncStr](EventSourceTime *, uint64_t) {
                             if (auto *inputContext = ref.get()) {
@@ -1010,6 +1020,14 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
                 event.filterAndAccept();
                 return;
             }
+
+            if (isComposeTableMode()) {
+                if (!autoSelectCandidate()) {
+                    commitBuffer(true);
+                    needUpdate = true;
+                }
+            }
+
             break;
         }
         // if current key will produce some string, select the candidate.
@@ -1027,7 +1045,7 @@ void TableState::keyEvent(const InputMethodEntry &entry, KeyEvent &event) {
             auto pushResult =
                 engine_->punctuation()->call<IPunctuation::pushPunctuationV2>(
                     entry.languageCode(), inputContext, chr);
-            if (candidates.size() == 1) {
+            if (candidates.size() == 1 || isComposeTableMode()) {
                 std::tie(punc, puncAfter) = pushResult;
             } else if (candidates.size() > 1) {
                 updatePuncCandidate(inputContext, utf8::UCS4ToUTF8(chr),
@@ -1110,10 +1128,14 @@ bool TableState::handle2nd3rdCandidate(const TableConfig &config,
             if (keyReleased == idx &&
                 keyReleasedIndex == event.key().keyListIndex(keyHandler.list)) {
                 if (isModifier) {
-                    if (keyHandler.selection < candidateList->size()) {
+                    if (engine_->instance()
+                            ->globalConfig()
+                            .checkModifierOnlyKeyTimeout(lastKeyPressedTime_) &&
+                        keyHandler.selection < candidateList->size()) {
                         candidateList->candidate(keyHandler.selection)
                             .select(inputContext);
                     }
+                    lastKeyPressedTime_ = 0;
                     event.filterAndAccept();
                     return true;
                 }
@@ -1132,6 +1154,7 @@ bool TableState::handle2nd3rdCandidate(const TableConfig &config,
                 keyReleased_ = idx;
                 keyReleasedIndex_ = keyIdx;
                 if (isModifier) {
+                    lastKeyPressedTime_ = now(CLOCK_MONOTONIC);
                     // don't forward to input method, but make it pass
                     // through to client.
                     event.filter();
@@ -1278,9 +1301,7 @@ void TableState::updateUI(bool keepOldCursor, bool maybePredict) {
             }
         }
     }
-    if (cursor < 0) {
-        cursor = 0;
-    }
+    cursor = std::max(cursor, 0);
 
     ic_->inputPanel().reset();
 
@@ -1292,7 +1313,7 @@ void TableState::updateUI(bool keepOldCursor, bool maybePredict) {
     auto &inputPanel = ic_->inputPanel();
     if (!context->userInput().empty()) {
         auto candidates = context->candidates();
-        if (!candidates.empty()) {
+        if (!candidates.empty() && !isComposeTableMode()) {
             auto candidateList = std::make_unique<CommonCandidateList>();
             size_t idx = 0;
             candidateList->setLayoutHint(*config.candidateLayoutHint);

@@ -9,20 +9,18 @@
 #include "testim_public.h"
 #include <fcitx-utils/eventdispatcher.h>
 #include <fcitx-utils/log.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/testing.h>
 #include <fcitx/action.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputmethodmanager.h>
 #include <fcitx/instance.h>
 #include <fcitx/userinterfacemanager.h>
-#include <iostream>
-#include <thread>
 
 using namespace fcitx;
 
-void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
-    dispatcher->schedule([instance]() {
+void scheduleEvent(Instance *instance) {
+    instance->eventDispatcher().schedule([instance]() {
         auto *fullwidth = instance->addonManager().addon("fullwidth", true);
         FCITX_ASSERT(fullwidth);
         RawConfig config;
@@ -30,7 +28,7 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         fullwidth->setConfig(config);
     });
 
-    dispatcher->schedule([dispatcher, instance]() {
+    instance->eventDispatcher().schedule([instance]() {
         auto testfrontend = instance->addonManager().addon("testfrontend");
         auto testim = instance->addonManager().addon("testim");
         auto *action =
@@ -86,7 +84,6 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
         testfrontend->call<ITestFrontend::pushCommitExpectation>(",");
         testfrontend->call<ITestFrontend::keyEvent>(uuid, Key(","), false);
 
-        dispatcher->detach();
         instance->exit();
     });
 }
@@ -94,9 +91,9 @@ void scheduleEvent(EventDispatcher *dispatcher, Instance *instance) {
 void runInstance() {}
 
 int main() {
-    setupTestingEnvironment(
-        TESTING_BINARY_DIR,
-        {"modules/fullwidth", StandardPath::fcitxPath("addondir")}, {"test"});
+    setupTestingEnvironment(TESTING_BINARY_DIR,
+                            {"bin", StandardPaths::fcitxPath("addondir")},
+                            {"test"});
     fcitx::Log::setLogRule("*=5");
 
     char arg0[] = "testfullwidth";
@@ -105,11 +102,8 @@ int main() {
     char *argv[] = {arg0, arg1, arg2};
     Instance instance(FCITX_ARRAY_SIZE(argv), argv);
     instance.addonManager().registerDefaultLoader(nullptr);
-    EventDispatcher dispatcher;
-    dispatcher.attach(&instance.eventLoop());
-    std::thread thread(scheduleEvent, &dispatcher, &instance);
+    scheduleEvent(&instance);
     instance.exec();
-    thread.join();
 
     return 0;
 }

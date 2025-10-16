@@ -5,19 +5,29 @@
  *
  */
 #include "customphrasemodel.h"
+#include "../../im/pinyin/customphrase.h"
+#include <QAbstractTableModel>
 #include <QApplication>
+#include <QByteArray>
 #include <QFile>
+#include <QFuture>
 #include <QFutureWatcher>
+#include <QLatin1String>
+#include <QList>
+#include <QObject>
+#include <Qt>
 #include <QtConcurrentRun>
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
+#include <fcitx-utils/fdstreambuf.h>
 #include <fcitx-utils/i18n.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/stringutils.h>
 #include <fcitx-utils/utf8.h>
 #include <fcntl.h>
-#include <qfuturewatcher.h>
-#include <qnamespace.h>
+#include <istream>
+#include <ostream>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace fcitx {
 
@@ -84,13 +94,15 @@ QVariant CustomPhraseModel::headerData(int section, Qt::Orientation orientation,
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         if (section == Column_Key) {
             return _("Key");
-        } else if (section == Column_Phrase) {
+        }
+        if (section == Column_Phrase) {
             return _("Phrase");
-        } else if (section == Column_Order) {
+        }
+        if (section == Column_Order) {
             return _("Order");
         }
     }
-    return QVariant();
+    return {};
 }
 
 int CustomPhraseModel::rowCount(const QModelIndex &parent) const {
@@ -112,9 +124,11 @@ QVariant CustomPhraseModel::data(const QModelIndex &index, int role) const {
             index.row() < list_.count()) {
             if (index.column() == Column_Key) {
                 return list_[index.row()].key;
-            } else if (index.column() == Column_Phrase) {
+            }
+            if (index.column() == Column_Phrase) {
                 return list_[index.row()].value;
-            } else if (index.column() == Column_Order) {
+            }
+            if (index.column() == Column_Order) {
                 return qAbs(list_[index.row()].order);
             }
         }
@@ -132,8 +146,9 @@ void CustomPhraseModel::addItem(const QString &key, const QString &word,
 }
 
 void CustomPhraseModel::deleteItem(int row) {
-    if (row >= list_.count() || row < 0)
+    if (row >= list_.count() || row < 0) {
         return;
+    }
     beginRemoveRows(QModelIndex(), row, row);
     list_.removeAt(row);
     endRemoveRows();
@@ -150,8 +165,9 @@ void CustomPhraseModel::deleteAllItem() {
 }
 
 Qt::ItemFlags CustomPhraseModel::flags(const QModelIndex &index) const {
-    if (!index.isValid())
+    if (!index.isValid()) {
         return {};
+    }
 
     if (index.column() == Column_Enable) {
         return Qt::ItemIsEnabled | Qt::ItemIsUserCheckable |
@@ -170,8 +186,9 @@ bool CustomPhraseModel::setData(const QModelIndex &index, const QVariant &value,
         return true;
     }
 
-    if (role != Qt::EditRole)
+    if (role != Qt::EditRole) {
         return false;
+    }
 
     if (index.column() == Column_Key) {
         list_[index.row()].key = value.toString();
@@ -179,13 +196,15 @@ bool CustomPhraseModel::setData(const QModelIndex &index, const QVariant &value,
         Q_EMIT dataChanged(index, index);
         setNeedSave(true);
         return true;
-    } else if (index.column() == Column_Phrase) {
+    }
+    if (index.column() == Column_Phrase) {
         list_[index.row()].value = value.toString();
 
         Q_EMIT dataChanged(index, index);
         setNeedSave(true);
         return true;
-    } else if (index.column() == Column_Order) {
+    }
+    if (index.column() == Column_Order) {
         list_[index.row()].order = value.toInt();
 
         Q_EMIT dataChanged(index, index);
@@ -214,16 +233,14 @@ QList<CustomPhraseItem> CustomPhraseModel::parse(const QString &file) {
     QList<CustomPhraseItem> list;
 
     do {
-        auto fp = fcitx::StandardPath::global().open(
-            fcitx::StandardPath::Type::PkgData, fileNameArray.constData(),
-            O_RDONLY);
-        if (fp.fd() < 0)
+        auto fp = StandardPaths::global().open(StandardPathsType::PkgData,
+                                               fileNameArray.constData());
+        if (!fp.isValid()) {
             break;
+        }
 
-        boost::iostreams::stream_buffer<
-            boost::iostreams::file_descriptor_source>
-            buffer(fp.fd(),
-                   boost::iostreams::file_descriptor_flags::never_close_handle);
+        IFDStreamBuf buffer(fp.fd());
+
         std::istream in(&buffer);
         CustomPhraseDict dict;
         dict.load(in, /*loadDisabled=*/true);
@@ -262,13 +279,9 @@ QFutureWatcher<bool> *CustomPhraseModel::save() {
 bool CustomPhraseModel::saveData(const QString &file,
                                  const QList<CustomPhraseItem> &list) {
     QByteArray filenameArray = file.toLocal8Bit();
-    return StandardPath::global().safeSave(
-        StandardPath::Type::PkgData, filenameArray.constData(),
-        [&list](int fd) {
-            boost::iostreams::stream_buffer<
-                boost::iostreams::file_descriptor_sink>
-                buffer(fd, boost::iostreams::file_descriptor_flags::
-                               never_close_handle);
+    return StandardPaths::global().safeSave(
+        StandardPathsType::PkgData, filenameArray.constData(), [&list](int fd) {
+            OFDStreamBuf buffer(fd);
             std::ostream out(&buffer);
             auto printMultilineComment = [](std::ostream &out,
                                             std::string_view text) {
@@ -294,8 +307,7 @@ bool CustomPhraseModel::saveData(const QString &file,
 }
 
 void CustomPhraseModel::saveFinished() {
-    QFutureWatcher<bool> *watcher =
-        static_cast<QFutureWatcher<bool> *>(sender());
+    auto *watcher = static_cast<QFutureWatcher<bool> *>(sender());
     QFuture<bool> future = watcher->future();
     if (future.result()) {
         setNeedSave(false);

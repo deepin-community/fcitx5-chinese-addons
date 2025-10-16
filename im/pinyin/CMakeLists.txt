@@ -4,10 +4,11 @@ set(PINYIN_SOURCES
     symboldictionary.cpp
     workerthread.cpp
     pinyincandidate.cpp
+    pinyinenginefactory.cpp
 )
 
-add_library(pinyin MODULE ${PINYIN_SOURCES})
-target_link_libraries(pinyin Fcitx5::Core Fcitx5::Config LibIME::Pinyin Boost::iostreams Fcitx5::Module::Punctuation Fcitx5::Module::QuickPhrase Fcitx5::Module::Notifications Fcitx5::Module::Spell Fcitx5::Module::PinyinHelper Pthread::Pthread ${FMT_TARGET})
+add_fcitx5_addon(pinyin ${PINYIN_SOURCES})
+target_link_libraries(pinyin Fcitx5::Core Fcitx5::Config LibIME::Pinyin Fcitx5::Module::Punctuation Fcitx5::Module::QuickPhrase Fcitx5::Module::Notifications Fcitx5::Module::Spell Fcitx5::Module::PinyinHelper Pthread::Pthread)
 
 if (TARGET Fcitx5::Module::LuaAddonLoader)
     target_compile_definitions(pinyin PRIVATE -DFCITX_HAS_LUA)

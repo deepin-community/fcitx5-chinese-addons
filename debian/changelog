@@ -1,8 +1,28 @@
-fcitx5-chinese-addons (5.1.6-3deepin0) unstable; urgency=medium
+fcitx5-chinese-addons (5.1.9-2) unstable; urgency=medium
 
-  * No source change upload against GCC 12.
+  * Rebuild against gcc-15 toolchain.
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Thu, 19 Sep 2024 22:46:10 +0800
+ -- Boyuan Yang <byang@debian.org>  Thu, 02 Oct 2025 12:28:49 -0400
+
+fcitx5-chinese-addons (5.1.9-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/control: Migrate to Qt6.
+  * debian/patches/: Dropped, not needed now.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 12 Aug 2025 19:24:48 -0400
+
+fcitx5-chinese-addons (5.1.8-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Thu, 23 Jan 2025 13:01:47 -0500
+
+fcitx5-chinese-addons (5.1.7-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 08 Oct 2024 18:49:26 -0400
 
 fcitx5-chinese-addons (5.1.6-3) unstable; urgency=medium
 

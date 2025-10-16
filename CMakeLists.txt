@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.6.0)
-project(fcitx5-chinese-addons VERSION 5.1.6)
+project(fcitx5-chinese-addons VERSION 5.1.9)
+
+set(REQUIRED_FCITX_VERSION 5.1.13)
 
 find_package(ECM REQUIRED 1.0.0)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -8,21 +10,18 @@ include(GNUInstallDirs)
 include(ECMSetupVersion)
 include(ECMUninstallTarget)
 
-find_package(Fcitx5Core 5.1.9 REQUIRED)
+find_package(Fcitx5Core ${REQUIRED_FCITX_VERSION} REQUIRED)
 find_package(Fcitx5Module REQUIRED COMPONENTS Notifications QuickPhrase Spell Clipboard)
 find_package(Fcitx5ModuleLuaAddonLoader)
 find_package(Pthread REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Gettext REQUIRED)
-find_package(fmt REQUIRED)
-
-if (TARGET fmt::fmt-header-only)
-  set(FMT_TARGET fmt::fmt-header-only)
-else()
-  set(FMT_TARGET fmt::fmt)
-endif ()
 
 include("${FCITX_INSTALL_CMAKECONFIG_DIR}/Fcitx5Utils/Fcitx5CompilerSettings.cmake")
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 #######################################################################
 # Options
@@ -33,9 +32,7 @@ set(GCOV_TOOL "gcov" CACHE STRING "Path to gcov tool used by coverage.")
 option(ENABLE_OPENCC "Enable OpenCC for chttrans" On)
 option(ENABLE_GUI "Enable Configure Gui" On)
 option(ENABLE_BROWSER "Enable built-in browser." On)
-option(USE_WEBKIT "Use WebKit as browser backend." Off)
 option(ENABLE_CLOUDPINYIN "Build cloud pinyin addon" On)
-option(USE_QT6 "Build with Qt6" On)
 option(ENABLE_DATA "Build data" On)
 
 if (ENABLE_OPENCC)
@@ -43,28 +40,17 @@ if (ENABLE_OPENCC)
 endif()
 
 if (ENABLE_GUI)
-    if (USE_QT6)
-        set(QT_MAJOR_VERSION 6)
-        if (USE_WEBKIT)
-            message(FATAL_ERROR "Qt 6 does not have webkit available.")
-        endif()
-    else()
-        set(QT_MAJOR_VERSION 5)
-    endif()
+    set(QT_MAJOR_VERSION 6)
     find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS Concurrent)
     find_package(Fcitx5Qt${QT_MAJOR_VERSION}WidgetsAddons REQUIRED)
     if (ENABLE_BROWSER)
-        if (USE_WEBKIT)
-            find_package(Qt${QT_MAJOR_VERSION}WebKitWidgets REQUIRED)
-        else()
-            find_package(Qt${QT_MAJOR_VERSION}WebEngineWidgets REQUIRED)
-        endif()
+        find_package(Qt${QT_MAJOR_VERSION}WebEngineWidgets REQUIRED)
     endif()
 endif()
 
 # We do not need json if OpenCC is not needed, but just try to find it anyway to save some ifelse logic
-find_package(Boost 1.61 REQUIRED COMPONENTS iostreams OPTIONAL_COMPONENTS json)
-find_package(LibIMEPinyin 1.1.7 REQUIRED)
+find_package(Boost 1.61 OPTIONAL_COMPONENTS json)
+find_package(LibIMEPinyin 1.1.11 REQUIRED)
 find_package(LibIMETable 1.1.4 REQUIRED)
 
 if (ENABLE_CLOUDPINYIN)

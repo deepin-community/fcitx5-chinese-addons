@@ -9,10 +9,10 @@
 #include <fcitx-config/rawconfig.h>
 #include <fcitx-utils/eventdispatcher.h>
 #include <fcitx-utils/key.h>
-#include <fcitx-utils/keysymgen.h>
+#include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/macros.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/testing.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputmethodengine.h>
@@ -186,13 +186,10 @@ void scheduleEvent(Instance *instance) {
 }
 
 int main() {
-    setupTestingEnvironment(TESTING_BINARY_DIR,
-                            {TESTING_BINARY_DIR "/modules/pinyinhelper",
-                             TESTING_BINARY_DIR "/modules/punctuation",
-                             TESTING_BINARY_DIR "/im/table"},
+    setupTestingEnvironment(TESTING_BINARY_DIR, {"bin"},
                             {TESTING_BINARY_DIR "/test",
                              TESTING_BINARY_DIR "/modules",
-                             StandardPath::fcitxPath("pkgdatadir")});
+                             StandardPaths::fcitxPath("pkgdatadir")});
     fcitx::Log::setLogRule("default=5,table=5,libime-table=5");
     char arg0[] = "testtable";
     char arg1[] = "--disable=all";

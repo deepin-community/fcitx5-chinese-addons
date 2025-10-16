@@ -10,29 +10,31 @@ Build-Depends:
  debhelper-compat (= 13),
  extra-cmake-modules,
  fcitx5-module-lua-dev,
- fcitx5-modules-dev (>= 5.1.8),
+ fcitx5-modules-dev (>= 5.1.14-4~),
  gettext,
  libboost-iostreams-dev,
  libboost-json-dev,
  libcurl4-openssl-dev | libcurl-dev,
- libfcitx5-qt-dev,
- libfcitx5config-dev (>= 5.1.8),
- libfcitx5core-dev (>= 5.1.8),
- libfcitx5utils-dev (>= 5.1.8),
- libfmt-dev,
- libime-bin (>= 1.1.4),
- libimecore-dev (>= 1.1.4),
- libimepinyin-dev (>= 1.1.6),
- libimetable-dev (>= 1.1.4~),
+ libfcitx5-qt6-dev,
+ libfcitx5config-dev (>= 5.1.14-4~),
+ libfcitx5core-dev (>= 5.1.14-4~),
+ libfcitx5utils-dev (>= 5.1.14-4~),
+ libime-bin (>= 1.1.11-2~),
+ libimecore-dev (>= 1.1.11-2~),
+ libimepinyin-dev (>= 1.1.11-2~),
+ libimetable-dev (>= 1.1.11-2~),
  libopencc-dev (>= 1.1.9~),
  pkgconf,
- qtbase5-dev,
- qtwebengine5-dev [amd64 arm64 armhf i386 mips64el],
-Standards-Version: 4.7.0
+ qt6-base-dev,
+ qt6-webengine-dev [amd64 arm64 armhf i386 mips64el],
+Standards-Version: 4.7.2
 Rules-Requires-Root: no
 Homepage: https://github.com/fcitx/fcitx5-chinese-addons
 Vcs-Git: https://salsa.debian.org/input-method-team/fcitx5-chinese-addons.git
 Vcs-Browser: https://salsa.debian.org/input-method-team/fcitx5-chinese-addons
+Description: Chinese-related addon for fcitx5
+ For Chinese fcitx5 users, fcitx5-chinese-addons provides Chinese-specific
+ pinyin and table input method support.
 
 Package: fcitx5-chinese-addons
 Section: metapackages

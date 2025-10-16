@@ -11,11 +11,12 @@
 #include <fcitx-config/rawconfig.h>
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/eventdispatcher.h>
+#include <fcitx-utils/eventloopinterface.h>
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/macros.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/testing.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputmethodgroup.h>
@@ -31,7 +32,7 @@ using namespace fcitx;
 std::unique_ptr<EventSourceTime> endTestEvent;
 void testPunctuationPart2(Instance *instance);
 
-int findCandidateOrDie(InputContext *ic, std::string_view word) {
+int findCandidate(InputContext *ic, std::string_view word) {
     auto candList = ic->inputPanel().candidateList();
     for (int i = 0; i < candList->toBulk()->totalSize(); i++) {
         const auto &candidate = candList->toBulk()->candidateFromAll(i);
@@ -39,8 +40,13 @@ int findCandidateOrDie(InputContext *ic, std::string_view word) {
             return i;
         }
     }
-    FCITX_ASSERT(false) << "Failed to find candidate: " << word;
     return -1;
+}
+
+int findCandidateOrDie(InputContext *ic, std::string_view word) {
+    auto index = findCandidate(ic, word);
+    FCITX_ASSERT(index >= 0) << "Failed to find candidate " << word;
+    return index;
 }
 
 void findAndSelectCandidate(InputContext *ic, std::string_view word) {
@@ -193,6 +199,36 @@ void testSelectByChar(Instance *instance) {
     });
 }
 
+void testUppercase(Instance *instance) {
+    instance->eventDispatcher().schedule([instance]() {
+        auto *testfrontend = instance->addonManager().addon("testfrontend");
+        auto uuid =
+            testfrontend->call<ITestFrontend::createInputContext>("testapp");
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("Apple");
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("A"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("l"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("e"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("space"), false);
+
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("iPhone");
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("i"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("P"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("o"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("n"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("e"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("space"), false);
+    });
+}
+
 void testForget(Instance *instance) {
     instance->eventDispatcher().schedule([instance]() {
         auto *testfrontend = instance->addonManager().addon("testfrontend");
@@ -218,7 +254,42 @@ void testForget(Instance *instance) {
         FCITX_ASSERT(!actions.empty());
         FCITX_ASSERT(actions[0].id() == 0);
         actionable->triggerAction(cand, 0);
-        FCITX_ASSERT(!ic->inputPanel().candidateList());
+        FCITX_ASSERT(ic->inputPanel().candidateList());
+    });
+}
+
+void testActionInStrokeFilter(Instance *instance) {
+    instance->eventDispatcher().schedule([instance]() {
+        auto *testfrontend = instance->addonManager().addon("testfrontend");
+        auto uuid =
+            testfrontend->call<ITestFrontend::createInputContext>("testapp");
+        auto *ic = instance->inputContextManager().findByUUID(uuid);
+        FCITX_ASSERT(ic);
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+        // Target ppp for 彡
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        auto *candidateList = ic->inputPanel().candidateList().get();
+        findCandidateOrDie(ic, "彡");
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("`"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        candidateList = ic->inputPanel().candidateList().get();
+        FCITX_ASSERT(findCandidate(ic, "彡") < 0);
+        int index = findCandidateOrDie(ic, "䫠");
+        const auto &cand = candidateList->candidate(index);
+        auto *actionable = candidateList->toActionable();
+        FCITX_ASSERT(actionable);
+        FCITX_ASSERT(actionable->hasAction(cand));
+        auto actions = actionable->candidateActions(cand);
+        FCITX_ASSERT(!actions.empty());
+        FCITX_ASSERT(actions[0].id() == 0);
+        actionable->triggerAction(cand, 0);
+        FCITX_ASSERT(ic->inputPanel().candidateList());
     });
 }
 
@@ -242,7 +313,8 @@ void testPin(Instance *instance) {
         FCITX_ASSERT(ic);
         auto index1 = findCandidateOrDie(ic, "同音");
         auto index2 = findCandidateOrDie(ic, "痛饮");
-        const auto oldIndex1 = index1, oldIndex2 = index2;
+        const auto oldIndex1 = index1;
+        const auto oldIndex2 = index2;
         FCITX_INFO() << "同音:" << index1 << " "
                      << "痛饮:" << index2;
         {
@@ -294,6 +366,65 @@ void testPin(Instance *instance) {
                      << "痛饮:" << index2;
         FCITX_ASSERT(index1 == oldIndex1);
         FCITX_ASSERT(index2 == oldIndex2);
+    });
+}
+
+void testQuickPhraseTrigger(Instance *instance) {
+    instance->eventDispatcher().schedule([instance]() {
+        auto *testfrontend = instance->addonManager().addon("testfrontend");
+        auto uuid =
+            testfrontend->call<ITestFrontend::createInputContext>("testapp");
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("Control+space"),
+                                                    false);
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("w"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("w"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("w"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("."), false);
+        auto *ic = instance->inputContextManager().findByUUID(uuid);
+        FCITX_ASSERT(ic);
+        FCITX_ASSERT(ic->inputPanel().preedit().toString() == "www.");
+
+        ic->reset();
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("b"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("b"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("s"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("."), false);
+        FCITX_ASSERT(ic->inputPanel().preedit().toString() == "bbs.");
+
+        ic->reset();
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("u"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("s"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("e"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("r"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("@"), false);
+        FCITX_ASSERT(ic->inputPanel().preedit().toString() == "user@");
+
+        ic->reset();
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("t"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("t"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("p"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key(":"), false);
+        FCITX_ASSERT(ic->inputPanel().preedit().toString() == "http:");
+
+        ic->reset();
+        // htt: shouldn't trigger.
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("h"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("t"), false);
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key("t"), false);
+
+        FCITX_ASSERT(ic->inputPanel().candidateList());
+        FCITX_ASSERT(!ic->inputPanel().candidateList()->empty());
+        const auto firstCandidate =
+            ic->inputPanel().candidateList()->candidate(0).text().toString();
+        testfrontend->call<ITestFrontend::pushCommitExpectation>(
+            firstCandidate);
+        testfrontend->call<ITestFrontend::pushCommitExpectation>("：");
+
+        testfrontend->call<ITestFrontend::keyEvent>(uuid, Key(":"), false);
+        FCITX_ASSERT(ic->inputPanel().preedit().toString() == "");
     });
 }
 
@@ -361,26 +492,26 @@ void testPunctuationPart2(Instance *instance) {
 
 int main() {
     setupTestingEnvironment(
-        TESTING_BINARY_DIR,
-        {TESTING_BINARY_DIR "/modules/pinyinhelper",
-         TESTING_BINARY_DIR "/modules/punctuation",
-         TESTING_BINARY_DIR "/im/pinyin"},
+        TESTING_BINARY_DIR, {"bin"},
         {TESTING_BINARY_DIR "/test", TESTING_BINARY_DIR "/im",
          TESTING_BINARY_DIR "/modules", TESTING_SOURCE_DIR "/modules",
-         StandardPath::fcitxPath("pkgdatadir")});
+         StandardPaths::fcitxPath("pkgdatadir")});
     // fcitx::Log::setLogRule("default=5,table=5,libime-table=5");
     char arg0[] = "testpinyin";
     char arg1[] = "--disable=all";
     char arg2[] = "--enable=testim,testfrontend,pinyin,punctuation,"
-                  "pinyinhelper";
+                  "pinyinhelper,spell,quickphrase";
     char *argv[] = {arg0, arg1, arg2};
     fcitx::Log::setLogRule("default=5,pinyin=5");
     Instance instance(FCITX_ARRAY_SIZE(argv), argv);
     instance.addonManager().registerDefaultLoader(nullptr);
     testBasic(&instance);
     testSelectByChar(&instance);
+    testUppercase(&instance);
     testForget(&instance);
+    testActionInStrokeFilter(&instance);
     testPin(&instance);
+    testQuickPhraseTrigger(&instance);
     testPunctuation(&instance);
     instance.exec();
     endTestEvent.reset();

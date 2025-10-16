@@ -9,7 +9,7 @@
 #include "notifications_public.h"
 #include <fcitx-config/iniparser.h>
 #include <fcitx-utils/i18n.h>
-#include <fcitx-utils/standardpath.h>
+#include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/inputcontext.h>
@@ -108,7 +108,10 @@ Fullwidth::Fullwidth(Instance *instance) : instance_(instance) {
     reloadConfig();
 }
 
-void Fullwidth::reloadConfig() { readAsIni(config_, "conf/fullwidth.conf"); }
+void Fullwidth::reloadConfig() {
+    readAsIni(config_, "conf/fullwidth.conf");
+    toggleAction_.setHotkey(config_.hotkey.value());
+}
 
 bool Fullwidth::inWhiteList(InputContext *inputContext) const {
     return toggleAction_.isParent(&inputContext->statusArea());
@@ -121,4 +124,4 @@ class FullwidthModuleFactory : public AddonFactory {
     }
 };
 
-FCITX_ADDON_FACTORY(FullwidthModuleFactory)
+FCITX_ADDON_FACTORY_V2(fullwidth, FullwidthModuleFactory)
